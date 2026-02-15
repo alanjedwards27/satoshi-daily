@@ -9,8 +9,11 @@ export default function AppShell({ children }: AppShellProps) {
   return (
     <div className={styles.shell}>
       <div className={styles.header}>
-        <div className={styles.btcIcon}>₿</div>
-        <span className={styles.logoText}>Satoshi Daily</span>
+        <div className={styles.headerTop}>
+          <div className={styles.btcIcon}>₿</div>
+          <span className={styles.logoText}>Satoshi Daily</span>
+        </div>
+        <span className={styles.tagline}>The Daily Bitcoin Price Game</span>
       </div>
       <div className={styles.content}>
         {children}
