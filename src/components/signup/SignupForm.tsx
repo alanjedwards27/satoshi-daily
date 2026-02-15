@@ -99,6 +99,10 @@ export default function SignupForm() {
         <label htmlFor="marketing" className={styles.checkboxLabel}>
           Send me daily results, Bitcoin insights & sponsor offers. Unsubscribe anytime.
         </label>
+
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0', paddingLeft: '30px', lineHeight: 1.5 }}>
+          🔒 We'll never sell your data. You'll only ever hear from us.
+        </p>
       </motion.div>
 
       <motion.div
