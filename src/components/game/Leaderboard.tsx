@@ -1,40 +1,111 @@
-import { useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import Card from '../shared/Card'
 import { useGame } from '../../context/GameContext'
 import { useAuth } from '../../context/AuthContext'
-import { generateMockLeaderboard } from '../../utils/mockLeaderboard'
 import { maskEmail } from '../../utils/format'
+import { supabase } from '../../lib/supabase'
+
+interface LeaderboardEntry {
+  rank: number
+  email: string
+  accuracy: number
+  prediction: number
+  isUser: boolean
+}
 
 export default function Leaderboard() {
   const { dayData, btcPrice } = useGame()
   const { user } = useAuth()
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const entries = useMemo(() => {
-    const actualPrice = dayData.actualPrice || btcPrice
-    const mock = generateMockLeaderboard(actualPrice)
+  const actualPrice = dayData.actualPrice || btcPrice
+  const gameDate = dayData.date || new Date().toISOString().split('T')[0]
 
-    // Insert user if they have a prediction
-    if (user && dayData.predictions.length > 0) {
-      const bestPrediction = dayData.predictions.reduce((best, p) =>
-        Math.abs(p - actualPrice) < Math.abs(best - actualPrice) ? p : best
-      , dayData.predictions[0])
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        // Fetch all predictions for today with the user's email from profiles
+        const { data: predictions } = await supabase
+          .from('predictions')
+          .select('user_id, predicted_price, profiles!inner(email)')
+          .eq('game_date', gameDate)
 
-      const accuracy = Math.max(0, 1 - Math.abs(bestPrediction - actualPrice) / actualPrice)
+        if (!predictions || predictions.length === 0) {
+          setLoading(false)
+          return
+        }
 
-      mock.push({
-        rank: 0,
-        email: maskEmail(user.email),
-        accuracy,
-        prediction: bestPrediction,
-        isUser: true,
-      })
+        // Group by user, take best prediction per user
+        const userBest = new Map<string, { email: string; prediction: number; accuracy: number }>()
+
+        for (const p of predictions) {
+          const predictedPrice = Number(p.predicted_price)
+          const accuracy = actualPrice > 0
+            ? Math.max(0, 1 - Math.abs(predictedPrice - actualPrice) / actualPrice)
+            : 0
+
+          const existing = userBest.get(p.user_id)
+          const profileData = p.profiles as unknown as { email: string }
+
+          if (!existing || accuracy > existing.accuracy) {
+            userBest.set(p.user_id, {
+              email: profileData.email,
+              prediction: predictedPrice,
+              accuracy,
+            })
+          }
+        }
+
+        // Sort by accuracy descending, take top 10
+        const sorted = Array.from(userBest.entries())
+          .map(([userId, data]) => ({
+            rank: 0,
+            email: maskEmail(data.email),
+            prediction: data.prediction,
+            accuracy: data.accuracy,
+            isUser: userId === user?.id,
+          }))
+          .sort((a, b) => b.accuracy - a.accuracy)
+          .slice(0, 10)
+          .map((entry, i) => ({ ...entry, rank: i + 1 }))
+
+        setEntries(sorted)
+      } catch (err) {
+        console.error('Failed to fetch leaderboard:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    return mock
-      .sort((a, b) => b.accuracy - a.accuracy)
-      .slice(0, 10)
-      .map((entry, i) => ({ ...entry, rank: i + 1 }))
-  }, [dayData, btcPrice, user])
+    fetchLeaderboard()
+  }, [gameDate, actualPrice, user?.id])
+
+  if (loading) {
+    return (
+      <Card delay={0.3}>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+          Today's Leaderboard
+        </div>
+        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '13px' }}>
+          Loading leaderboard...
+        </div>
+      </Card>
+    )
+  }
+
+  if (entries.length === 0) {
+    return (
+      <Card delay={0.3}>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+          Today's Leaderboard
+        </div>
+        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '13px' }}>
+          No predictions yet today. Be the first!
+        </div>
+      </Card>
+    )
+  }
 
   return (
     <Card delay={0.3}>

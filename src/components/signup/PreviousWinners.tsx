@@ -1,35 +1,28 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { supabase } from '../../lib/supabase'
 import styles from './PreviousWinners.module.css'
 
-const MOCK_WINNERS = [
-  {
-    date: '14 Feb 2026',
-    winners: [
-      { tier: 'Exact', share: '£5.00', txId: '3a7f2b...c9e1', txUrl: 'https://mempool.space/lightning' },
-    ],
-    totalWinners: 1,
-    totalPaid: '£5.00',
-  },
-  {
-    date: '13 Feb 2026',
-    winners: [
-      { tier: 'Within $100', share: '£1.67', txId: 'e1b4d8...a2f3', txUrl: 'https://mempool.space/lightning' },
-      { tier: 'Within $100', share: '£1.67', txId: 'f8c2a1...d4e7', txUrl: 'https://mempool.space/lightning' },
-      { tier: 'Within $500', share: '£1.66', txId: 'd2a1f9...b7c4', txUrl: 'https://mempool.space/lightning' },
-    ],
-    totalWinners: 3,
-    totalPaid: '£5.00',
-  },
-  {
-    date: '12 Feb 2026',
-    winners: [
-      { tier: 'Within $100', share: '£2.50', txId: 'a4e7c3...f1b2', txUrl: 'https://mempool.space/lightning' },
-      { tier: 'Within $500', share: '£2.50', txId: 'c9f1a8...d3e6', txUrl: 'https://mempool.space/lightning' },
-    ],
-    totalWinners: 2,
-    totalPaid: '£5.00',
-  },
-]
+interface WinnerRow {
+  game_date: string
+  prize_tier: string
+  prize_share: number | null
+  tx_id: string | null
+  tx_url: string | null
+}
+
+interface WinnerDay {
+  date: string
+  winners: { tier: string; share: string; txId: string; txUrl: string }[]
+  totalWinners: number
+  totalPaid: string
+}
+
+const TIER_LABELS: Record<string, string> = {
+  exact: 'Exact',
+  within_100: 'Within $100',
+  within_500: 'Within $500',
+}
 
 const TIER_COLORS: Record<string, string> = {
   Exact: '#f7931a',
@@ -38,6 +31,63 @@ const TIER_COLORS: Record<string, string> = {
 }
 
 export default function PreviousWinners() {
+  const [days, setDays] = useState<WinnerDay[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchWinners() {
+      try {
+        const { data } = await supabase
+          .from('winners')
+          .select('game_date, prize_tier, prize_share, tx_id, tx_url')
+          .order('game_date', { ascending: false })
+          .limit(20)
+
+        if (!data || data.length === 0) {
+          setLoading(false)
+          return
+        }
+
+        // Group by game_date
+        const grouped = new Map<string, WinnerRow[]>()
+        for (const w of data) {
+          const existing = grouped.get(w.game_date) || []
+          existing.push(w)
+          grouped.set(w.game_date, existing)
+        }
+
+        const winnerDays: WinnerDay[] = Array.from(grouped.entries())
+          .slice(0, 3) // Last 3 days
+          .map(([dateStr, winners]) => ({
+            date: new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-GB', {
+              day: 'numeric', month: 'short', year: 'numeric',
+            }),
+            winners: winners.map(w => ({
+              tier: TIER_LABELS[w.prize_tier] || w.prize_tier,
+              share: w.prize_share ? `\u00A3${w.prize_share.toFixed(2)}` : 'Pending',
+              txId: w.tx_id ? `${w.tx_id.slice(0, 6)}...${w.tx_id.slice(-4)}` : 'pending...',
+              txUrl: w.tx_url || '#',
+            })),
+            totalWinners: winners.length,
+            totalPaid: `\u00A3${winners.reduce((sum, w) => sum + (w.prize_share || 0), 0).toFixed(2)}`,
+          }))
+
+        setDays(winnerDays)
+      } catch (err) {
+        console.error('Failed to fetch winners:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchWinners()
+  }, [])
+
+  // Don't render anything if still loading or no winners yet
+  if (loading || days.length === 0) {
+    return null
+  }
+
   return (
     <motion.div
       className={styles.wrapper}
@@ -54,7 +104,7 @@ export default function PreviousWinners() {
       </div>
 
       <div className={styles.days}>
-        {MOCK_WINNERS.map((day) => (
+        {days.map((day) => (
           <div key={day.date} className={styles.day}>
             <div className={styles.dayHeader}>
               <span className={styles.dayDate}>{day.date}</span>

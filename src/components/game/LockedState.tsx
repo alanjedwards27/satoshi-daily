@@ -34,22 +34,24 @@ export default function LockedState() {
         {/* Countdown */}
         <Countdown targetDate={targetTime.targetDate} label="Results reveal in" />
 
-        {/* Debug: force reveal button */}
-        <button
-          onClick={forceReveal}
-          style={{
-            marginTop: '16px',
-            fontSize: '11px',
-            color: 'var(--text-muted)',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '6px 12px',
-            cursor: 'pointer',
-          }}
-        >
-          Debug: Reveal Now
-        </button>
+        {/* Debug: force reveal button — dev only */}
+        {import.meta.env.DEV && (
+          <button
+            onClick={forceReveal}
+            style={{
+              marginTop: '16px',
+              fontSize: '11px',
+              color: 'var(--text-muted)',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 12px',
+              cursor: 'pointer',
+            }}
+          >
+            Debug: Reveal Now
+          </button>
+        )}
       </div>
     </Card>
   )

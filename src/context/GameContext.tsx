@@ -1,8 +1,10 @@
-import { createContext, useContext, type ReactNode, useCallback, useMemo, useEffect } from 'react'
+import { createContext, useContext, type ReactNode, useCallback, useMemo, useEffect, useState } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useBtcPrice } from '../hooks/useBtcPrice'
 import { useTargetTime } from '../hooks/useTargetTime'
 import { calculateAccuracy, type AccuracyResult } from '../utils/accuracy'
+import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthContext'
 
 type GamePhase = 'predicting' | 'locked' | 'revealed'
 
@@ -45,7 +47,7 @@ interface GameContextValue {
 
   // Actions
   submitPrediction: (price: number) => void
-  unlockBonus: () => void
+  unlockBonus: (platform: string) => void
   revealResult: () => void
 
   // Debug
@@ -74,24 +76,154 @@ const EMPTY_STATS: Stats = {
 }
 
 export function GameProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
   const { price: btcPrice, change24h: btcChange24h, loading: btcLoading } = useBtcPrice()
   const targetTime = useTargetTime()
 
+  // localStorage as fast cache
   const [dayData, setDayData] = useLocalStorage<DayData>('sd_day', EMPTY_DAY)
   const [stats, setStats] = useLocalStorage<Stats>('sd_stats', EMPTY_STATS)
   const [history, setHistory] = useLocalStorage<HistoryEntry[]>('sd_history', [])
+  const [synced, setSynced] = useState(false)
 
   const today = getTodayStr()
 
   // Day rollover: if stored day doesn't match today, reset day data
   useEffect(() => {
     if (dayData.date && dayData.date !== today) {
-      // Check if yesterday was played for streak
       setDayData({ ...EMPTY_DAY, date: today })
     } else if (!dayData.date) {
       setDayData({ ...EMPTY_DAY, date: today })
     }
   }, [today, dayData.date, setDayData])
+
+  // Sync from Supabase on mount — hydrate localStorage cache with server data
+  useEffect(() => {
+    if (!user || synced) return
+
+    async function syncFromServer() {
+      try {
+        // Fetch today's predictions for this user
+        const { data: predictions } = await supabase
+          .from('predictions')
+          .select('predicted_price, guess_number')
+          .eq('user_id', user!.id)
+          .eq('game_date', today)
+          .order('guess_number', { ascending: true })
+
+        // Fetch bonus unlock status
+        const { data: bonus } = await supabase
+          .from('bonus_unlocks')
+          .select('id')
+          .eq('user_id', user!.id)
+          .eq('game_date', today)
+          .maybeSingle()
+
+        // Fetch today's result (if game has been resolved)
+        const { data: dailyResult } = await supabase
+          .from('daily_results')
+          .select('actual_price')
+          .eq('game_date', today)
+          .maybeSingle()
+
+        const serverPredictions = predictions?.map(p => Number(p.predicted_price)) || []
+        const bonusUnlocked = !!bonus
+
+        // If server has data, use it (it's the source of truth)
+        if (serverPredictions.length > 0 || bonusUnlocked) {
+          const actualPrice = dailyResult?.actual_price ? Number(dailyResult.actual_price) : null
+
+          let result: AccuracyResult | null = null
+          if (actualPrice && serverPredictions.length > 0) {
+            // Compute result from best prediction
+            const bestPrediction = serverPredictions.reduce((best, p) =>
+              Math.abs(p - actualPrice) < Math.abs(best - actualPrice) ? p : best
+            , serverPredictions[0])
+            result = calculateAccuracy(bestPrediction, actualPrice)
+          }
+
+          setDayData({
+            date: today,
+            predictions: serverPredictions,
+            bonusUnlocked,
+            result,
+            actualPrice,
+          })
+        }
+
+        // Fetch user stats from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('current_streak, last_played_date')
+          .eq('id', user!.id)
+          .single()
+
+        // Fetch recent history (last 5 games)
+        const { data: historyData } = await supabase
+          .from('predictions')
+          .select('game_date, predicted_price')
+          .eq('user_id', user!.id)
+          .order('game_date', { ascending: false })
+          .limit(20) // fetch extra, we'll dedupe by date
+
+        const { data: results } = await supabase
+          .from('daily_results')
+          .select('game_date, actual_price')
+          .not('actual_price', 'is', null)
+          .order('game_date', { ascending: false })
+          .limit(10)
+
+        if (historyData && results) {
+          const resultsMap = new Map(results.map(r => [r.game_date, Number(r.actual_price)]))
+
+          // Group predictions by date, take best per day
+          const byDate = new Map<string, number[]>()
+          for (const p of historyData) {
+            const existing = byDate.get(p.game_date) || []
+            existing.push(Number(p.predicted_price))
+            byDate.set(p.game_date, existing)
+          }
+
+          const historyEntries: HistoryEntry[] = []
+          let totalAccuracy = 0
+          let bestAccuracy = 0
+
+          for (const [date, preds] of byDate) {
+            const actual = resultsMap.get(date)
+            if (!actual || date === today) continue // Skip today & unresolved
+
+            const bestPred = preds.reduce((best, p) =>
+              Math.abs(p - actual) < Math.abs(best - actual) ? p : best
+            , preds[0])
+            const acc = Math.max(0, 1 - Math.abs(bestPred - actual) / actual)
+
+            historyEntries.push({ date, prediction: bestPred, actual, accuracy: acc })
+            totalAccuracy += acc
+            bestAccuracy = Math.max(bestAccuracy, acc)
+          }
+
+          historyEntries.sort((a, b) => b.date.localeCompare(a.date))
+          setHistory(historyEntries.slice(0, 5))
+
+          if (historyEntries.length > 0) {
+            setStats({
+              streak: profile?.current_streak || 0,
+              played: historyEntries.length,
+              bestAccuracy,
+              totalAccuracy,
+            })
+          }
+        }
+
+        setSynced(true)
+      } catch (err) {
+        console.error('Failed to sync from Supabase:', err)
+        setSynced(true) // Use cached data
+      }
+    }
+
+    syncFromServer()
+  }, [user, today, synced, setDayData, setHistory, setStats])
 
   const maxGuesses = dayData.bonusUnlocked ? 2 : 1
 
@@ -102,16 +234,42 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [dayData.result, dayData.predictions.length, maxGuesses])
 
   const submitPrediction = useCallback((price: number) => {
+    const guessNumber = dayData.predictions.length + 1
+
+    // Optimistic update to localStorage
     setDayData(prev => ({
       ...prev,
       date: today,
       predictions: [...prev.predictions, price],
     }))
-  }, [today, setDayData])
 
-  const unlockBonus = useCallback(() => {
+    // Persist to Supabase
+    if (user) {
+      supabase.from('predictions').insert({
+        user_id: user.id,
+        game_date: today,
+        predicted_price: price,
+        guess_number: guessNumber,
+      }).then(({ error }) => {
+        if (error) console.error('Failed to save prediction:', error.message)
+      })
+    }
+  }, [today, user, dayData.predictions.length, setDayData])
+
+  const unlockBonus = useCallback((platform: string) => {
     setDayData(prev => ({ ...prev, bonusUnlocked: true }))
-  }, [setDayData])
+
+    // Persist to Supabase
+    if (user) {
+      supabase.from('bonus_unlocks').insert({
+        user_id: user.id,
+        game_date: today,
+        platform,
+      }).then(({ error }) => {
+        if (error) console.error('Failed to save bonus unlock:', error.message)
+      })
+    }
+  }, [user, today, setDayData])
 
   const doReveal = useCallback((overridePrice?: number) => {
     const actualPrice = overridePrice || btcPrice
@@ -144,7 +302,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Update history
       setHistory(h => [
         { date: today, prediction: bestPrediction, actual: actualPrice, accuracy: result.accuracy },
-        ...h.slice(0, 4), // Keep last 5
+        ...h.slice(0, 4),
       ])
 
       return { ...prev, result, actualPrice }
@@ -153,15 +311,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const revealResult = useCallback(() => doReveal(), [doReveal])
 
-  // Auto-reveal if target time has passed
+  // Auto-reveal: check daily_results from Supabase when target time has passed
   useEffect(() => {
-    if (phase === 'locked' && !dayData.result) {
-      const now = new Date()
-      if (now >= targetTime.targetDate) {
-        doReveal()
+    if (dayData.result || dayData.predictions.length === 0) return
+
+    const now = new Date()
+    if (now < targetTime.targetDate) return
+
+    // Target time has passed — check Supabase for recorded price
+    async function checkResult() {
+      const { data } = await supabase
+        .from('daily_results')
+        .select('actual_price')
+        .eq('game_date', today)
+        .maybeSingle()
+
+      if (data?.actual_price) {
+        doReveal(Number(data.actual_price))
+      } else {
+        // Server hasn't recorded yet — fall back to client BTC price
+        // (Edge Function will record it shortly, but don't leave user waiting)
+        if (btcPrice > 0) {
+          doReveal(btcPrice)
+        }
       }
     }
-  }, [phase, dayData.result, targetTime.targetDate, doReveal])
+
+    checkResult()
+  }, [phase, dayData.result, dayData.predictions.length, targetTime.targetDate, today, btcPrice, doReveal])
 
   const forceReveal = useCallback(() => {
     doReveal(btcPrice)

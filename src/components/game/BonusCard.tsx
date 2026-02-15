@@ -11,28 +11,30 @@ export default function BonusCard() {
   const [copied, setCopied] = useState(false)
   const shareTimeRef = useRef<number>(0)
   const leftPageRef = useRef(false)
+  const platformRef = useRef<string>('unknown')
 
   const shareText = `I just made my daily Bitcoin prediction on Satoshi Daily 🎯\n\nTarget time: ${targetTime.formatted} tomorrow\n\nCan you beat me?\n${BASE_URL}`
 
-  function startWaiting() {
+  function startWaiting(platform: string) {
     shareTimeRef.current = Date.now()
     leftPageRef.current = false
+    platformRef.current = platform
     setWaiting(true)
   }
 
   const handleX = useCallback(() => {
     shareToX(shareText)
-    startWaiting()
+    startWaiting('x')
   }, [shareText])
 
   const handleFacebook = useCallback(() => {
     shareToFacebook()
-    startWaiting()
+    startWaiting('facebook')
   }, [])
 
   const handleEmail = useCallback(() => {
     shareViaEmail('Check out Satoshi Daily — free Bitcoin prediction game', shareText)
-    startWaiting()
+    startWaiting('email')
   }, [shareText])
 
   const handleCopy = useCallback(async () => {
@@ -40,7 +42,7 @@ export default function BonusCard() {
     if (ok) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-      startWaiting()
+      startWaiting('copy')
     }
   }, [shareText])
 
@@ -54,7 +56,7 @@ export default function BonusCard() {
       } else if (leftPageRef.current) {
         const elapsed = Date.now() - shareTimeRef.current
         if (elapsed >= 10000) {
-          unlockBonus()
+          unlockBonus(platformRef.current)
           setWaiting(false)
         }
       }

@@ -18,13 +18,16 @@ export default function SignupForm() {
   const { signup } = useAuth()
   const [email, setEmail] = useState('')
   const [marketing, setMarketing] = useState(false)
+  const [sending, setSending] = useState(false)
 
   const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!isValid) return
-    signup(email, marketing)
+    if (!isValid || sending) return
+    setSending(true)
+    await signup(email, marketing)
+    // AuthContext sets status to 'pending_magic_link' → App shows VerifyPage
   }
 
   function handleShare() {
@@ -103,8 +106,8 @@ export default function SignupForm() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Button type="submit" fullWidth disabled={!isValid}>
-          Get Started Free
+        <Button type="submit" fullWidth disabled={!isValid || sending}>
+          {sending ? 'Sending magic link...' : 'Get Started Free'}
         </Button>
       </motion.div>
 
@@ -125,7 +128,7 @@ export default function SignupForm() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+        By signing up you agree to our <a href="#/terms">Terms</a> and <a href="#/privacy">Privacy Policy</a>
       </motion.div>
 
       <GamePreview />

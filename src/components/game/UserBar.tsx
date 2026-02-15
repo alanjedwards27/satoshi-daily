@@ -32,27 +32,29 @@ export default function UserBar() {
         </span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <button
-          onClick={() => {
-            try {
-              window.localStorage.removeItem('sd_day')
-              window.localStorage.removeItem('sd_stats')
-              window.localStorage.removeItem('sd_history')
-            } catch { /* ignore */ }
-            window.location.reload()
-          }}
-          style={{
-            fontSize: '11px',
-            color: 'var(--red)',
-            cursor: 'pointer',
-            background: 'none',
-            border: '1px solid var(--border)',
-            borderRadius: '4px',
-            padding: '3px 6px',
-          }}
-        >
-          Reset
-        </button>
+        {import.meta.env.DEV && (
+          <button
+            onClick={() => {
+              try {
+                window.localStorage.removeItem('sd_day')
+                window.localStorage.removeItem('sd_stats')
+                window.localStorage.removeItem('sd_history')
+              } catch { /* ignore */ }
+              window.location.reload()
+            }}
+            style={{
+              fontSize: '11px',
+              color: 'var(--red)',
+              cursor: 'pointer',
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: '4px',
+              padding: '3px 6px',
+            }}
+          >
+            Reset
+          </button>
+        )}
         <button
           onClick={logout}
           style={{

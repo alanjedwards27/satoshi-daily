@@ -14,8 +14,10 @@ import Leaderboard from '../components/game/Leaderboard'
 import History from '../components/game/History'
 import AdSlot from '../components/shared/AdSlot'
 import { useGame } from '../context/GameContext'
+import { usePageView } from '../hooks/usePageView'
 
 export default function GamePage() {
+  usePageView('game')
   const { phase, dayData } = useGame()
   const maxGuesses = dayData.bonusUnlocked ? 2 : 1
   const canGuess = dayData.predictions.length < maxGuesses
