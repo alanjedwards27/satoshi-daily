@@ -72,7 +72,7 @@ export default function BonusCard() {
 
     const fallback = setTimeout(() => {
       if (leftPageRef.current) {
-        unlockBonus()
+        unlockBonus(platformRef.current)
         setWaiting(false)
       }
     }, 30000)

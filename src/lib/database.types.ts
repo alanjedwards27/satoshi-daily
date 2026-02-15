@@ -35,6 +35,7 @@ export interface Database {
           last_played_date?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       predictions: {
         Row: {
@@ -61,6 +62,15 @@ export interface Database {
           guess_number?: number
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       daily_results: {
         Row: {
@@ -87,6 +97,7 @@ export interface Database {
           recorded_at?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       winners: {
         Row: {
@@ -137,6 +148,29 @@ export interface Database {
           paid_at?: string | null
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "winners_game_date_fkey"
+            columns: ["game_date"]
+            isOneToOne: false
+            referencedRelation: "daily_results"
+            referencedColumns: ["game_date"]
+          },
+          {
+            foreignKeyName: "winners_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "winners_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: false
+            referencedRelation: "predictions"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       page_views: {
         Row: {
@@ -163,6 +197,7 @@ export interface Database {
           user_agent?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       bonus_unlocks: {
         Row: {
@@ -186,10 +221,20 @@ export interface Database {
           platform?: string
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_unlocks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
     Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }
