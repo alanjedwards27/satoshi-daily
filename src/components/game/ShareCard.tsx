@@ -3,8 +3,7 @@ import Card from '../shared/Card'
 import { useGame } from '../../context/GameContext'
 import { shareToX, shareToFacebook, shareViaEmail, copyToClipboard } from '../../utils/share'
 
-const BASE_URL = 'satoshidaily.app'
-const FULL_URL = 'https://satoshidaily.app'
+const BASE_URL = 'https://satoshidaily.app'
 
 export default function ShareCard() {
   const { targetTime } = useGame()
@@ -20,11 +19,9 @@ export default function ShareCard() {
     shareToFacebook()
   }, [])
 
-  const emailText = `I just made my daily Bitcoin prediction on Satoshi Daily 🎯\n\nTarget time: ${targetTime.formatted} tomorrow\n\nCan you beat me?\n${FULL_URL}`
-
   const handleEmail = useCallback(() => {
-    shareViaEmail('Check out Satoshi Daily — free Bitcoin prediction game', emailText)
-  }, [emailText])
+    shareViaEmail('Check out Satoshi Daily — free Bitcoin prediction game', shareText)
+  }, [shareText])
 
   const handleCopy = useCallback(async () => {
     const ok = await copyToClipboard(shareText)

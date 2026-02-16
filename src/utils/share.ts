@@ -1,7 +1,6 @@
 import { getAccuracyBlocks } from './accuracy'
 
-const BASE_URL = 'satoshidaily.app'
-const FULL_URL = 'https://satoshidaily.app'
+const BASE_URL = 'https://satoshidaily.app'
 
 export interface ShareData {
   date: string
@@ -38,18 +37,13 @@ export function shareToX(text: string): void {
 
 // --- Share to Facebook ---
 export function shareToFacebook(): void {
-  const url = encodeURIComponent(`https://${BASE_URL}`)
+  const url = encodeURIComponent(BASE_URL)
   window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=550,height=420')
 }
 
 // --- Share via Email ---
 export function shareViaEmail(subject: string, body: string): void {
-  // Ensure the full URL is always in the email body
-  let emailBody = body
-  if (!emailBody.includes('https://')) {
-    emailBody = emailBody.replace(BASE_URL, FULL_URL)
-  }
-  const mailTo = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`
+  const mailTo = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   window.location.href = mailTo
 }
 
@@ -84,6 +78,6 @@ export function shareResultToFacebook(): void {
 export function shareResultViaEmail(opts: ShareData): void {
   const pct = (opts.accuracy * 100).toFixed(1)
   const subject = `My Satoshi Daily result — ${pct}% accuracy!`
-  const body = buildResultText(opts) + `\n\nPlay free: ${FULL_URL}`
+  const body = buildResultText(opts)
   shareViaEmail(subject, body)
 }

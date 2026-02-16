@@ -113,7 +113,7 @@ export default function SignupForm() {
   }
 
   function handleShare() {
-    const text = encodeURIComponent('Just found @SatoshiDailyApp — a free daily Bitcoin prediction game where you can win real BTC ⚡\n\nsatoshidaily.app')
+    const text = encodeURIComponent('Just found @SatoshiDailyApp — a free daily Bitcoin prediction game where you can win real BTC ⚡\n\nhttps://satoshidaily.app')
     window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'width=550,height=420')
   }
 
