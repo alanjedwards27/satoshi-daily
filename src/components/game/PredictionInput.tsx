@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../../context/GameContext'
+import { useCountdown } from '../../hooks/useCountdown'
 import { formatPrice, parsePriceInput } from '../../utils/format'
 
 const QUICK_ADJUSTS = [
@@ -13,8 +14,10 @@ const QUICK_ADJUSTS = [
 ]
 
 export default function PredictionInput() {
-  const { btcPrice, submitPrediction } = useGame()
+  const { btcPrice, submitPrediction, targetTime } = useGame()
   const [value, setValue] = useState(btcPrice)
+  const lockCountdown = useCountdown(targetTime.lockDate)
+  const pad = (n: number) => String(n).padStart(2, '0')
 
   function handleInputChange(raw: string) {
     const parsed = parsePriceInput(raw)
@@ -193,6 +196,30 @@ export default function PredictionInput() {
       }}>
         Within $500 of the real price? You win a share of the $5 daily pot
       </div>
+
+      {/* Lock countdown */}
+      {!lockCountdown.isExpired && (
+        <div style={{
+          textAlign: 'center',
+          marginTop: '12px',
+          padding: '8px',
+          background: 'var(--bg-secondary)',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--border)',
+        }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            Predictions lock in{' '}
+          </span>
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: 'var(--accent)',
+          }}>
+            {pad(lockCountdown.hours)}:{pad(lockCountdown.minutes)}:{pad(lockCountdown.seconds)}
+          </span>
+        </div>
+      )}
     </motion.div>
   )
 }
