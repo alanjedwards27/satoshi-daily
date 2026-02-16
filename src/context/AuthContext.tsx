@@ -19,6 +19,7 @@ interface AuthContextValue {
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
@@ -68,7 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Call the create-user Edge Function
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-user`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
         body: JSON.stringify({ email, marketingConsent, captchaToken }),
       })
 
