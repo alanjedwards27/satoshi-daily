@@ -15,7 +15,7 @@ function buildResultText(opts: ShareData): string {
   const blocks = getAccuracyBlocks(opts.accuracy)
   const pct = (opts.accuracy * 100).toFixed(1)
   return [
-    `Satoshi Daily — ${opts.date}`,
+    `@SatoshiDailyApp — ${opts.date}`,
     `🎯 Target: ${opts.targetTime}`,
     '',
     `${blocks} ${pct}% accuracy · $${Math.round(opts.difference).toLocaleString()} off`,
@@ -26,7 +26,7 @@ function buildResultText(opts: ShareData): string {
 }
 
 function buildPreGuessText(targetTime: string): string {
-  return `I just made my daily Bitcoin prediction on Satoshi Daily 🎯\n\nTarget time: ${targetTime} tomorrow\n\nCan you beat me?\n${BASE_URL}`
+  return `I just made my daily Bitcoin prediction on @SatoshiDailyApp 🎯\n\nTarget time: ${targetTime} tomorrow\n\nCan you beat me?\n${BASE_URL}`
 }
 
 // --- Share to X ---
