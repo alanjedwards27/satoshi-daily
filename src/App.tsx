@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GameProvider } from './context/GameContext'
 import SignupPage from './pages/SignupPage'
-import VerifyPage from './pages/VerifyPage'
 import GamePage from './pages/GamePage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
@@ -48,9 +47,6 @@ function Router() {
       </AppShell>
     )
   }
-
-  // "Check your email" waiting screen
-  if (status === 'pending_magic_link') return <VerifyPage />
 
   // Not authenticated — show signup
   if (!user) return <SignupPage />

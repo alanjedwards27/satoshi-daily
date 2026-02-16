@@ -1,4 +1,4 @@
-import { useState, type FormEvent, useMemo } from 'react'
+import { useState, useEffect, useRef, type FormEvent, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { getTargetTime } from '../../utils/targetTime'
@@ -10,6 +10,8 @@ import RecentPredictions from './RecentPredictions'
 import PreviousWinners from './PreviousWinners'
 import styles from './SignupForm.module.css'
 
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string
+
 const SELLING_POINTS = [
   { icon: '₿', text: '$5 daily BTC prize pool' },
   { icon: '⚡', text: 'Winnings paid via Lightning' },
@@ -17,11 +19,25 @@ const SELLING_POINTS = [
   { icon: '𝕏', text: 'Share on X for a bonus guess' },
 ]
 
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: string | HTMLElement, options: any) => string
+      reset: (widgetId: string) => void
+    }
+    onTurnstileLoad?: () => void
+  }
+}
+
 export default function SignupForm() {
   const { signup } = useAuth()
   const [email, setEmail] = useState('')
   const [marketing, setMarketing] = useState(false)
   const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<HTMLDivElement>(null)
+  const widgetIdRef = useRef<string | null>(null)
 
   const targetTime = useMemo(() => getTargetTime(), [])
   const lockCountdown = useCountdown(targetTime.lockDate)
@@ -29,12 +45,53 @@ export default function SignupForm() {
 
   const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
+  // Load Turnstile script
+  useEffect(() => {
+    if (document.getElementById('turnstile-script')) return
+
+    window.onTurnstileLoad = () => {
+      if (captchaRef.current && window.turnstile && !widgetIdRef.current) {
+        widgetIdRef.current = window.turnstile.render(captchaRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => setCaptchaToken(token),
+          'expired-callback': () => setCaptchaToken(null),
+          theme: 'dark',
+          size: 'flexible',
+        })
+      }
+    }
+
+    const script = document.createElement('script')
+    script.id = 'turnstile-script'
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
+    script.async = true
+    document.head.appendChild(script)
+  }, [])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!isValid || sending) return
+
+    if (!captchaToken) {
+      setError('Please complete the verification check.')
+      return
+    }
+
+    setError('')
     setSending(true)
-    await signup(email, marketing)
-    // AuthContext sets status to 'pending_magic_link' → App shows VerifyPage
+
+    const result = await signup(email, marketing, captchaToken)
+
+    if (result.error) {
+      setError(result.error)
+      setSending(false)
+      // Reset captcha for retry
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.reset(widgetIdRef.current)
+      }
+      setCaptchaToken(null)
+    }
+    // On success, AuthContext sets status to 'authenticated' → App shows GamePage
   }
 
   function handleShare() {
@@ -139,13 +196,41 @@ export default function SignupForm() {
         </p>
       </motion.div>
 
+      {/* Turnstile captcha widget */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.37 }}
+        style={{ display: 'flex', justifyContent: 'center' }}
+      >
+        <div ref={captchaRef} />
+      </motion.div>
+
+      {error && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{
+            padding: '10px 14px',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 'var(--radius-md)',
+            color: '#ef4444',
+            fontSize: '13px',
+            textAlign: 'center',
+          }}
+        >
+          {error}
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Button type="submit" fullWidth disabled={!isValid || sending}>
-          {sending ? 'Sending magic link...' : 'Get Started Free'}
+        <Button type="submit" fullWidth disabled={!isValid || sending || !captchaToken}>
+          {sending ? 'Signing up...' : 'Get Started Free'}
         </Button>
       </motion.div>
 

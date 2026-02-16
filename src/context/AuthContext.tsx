@@ -9,30 +9,22 @@ interface AuthUser {
   consentTimestamp: string | null
 }
 
-type AuthStatus = 'loading' | 'unauthenticated' | 'pending_magic_link' | 'authenticated'
+type AuthStatus = 'loading' | 'unauthenticated' | 'authenticated'
 
 interface AuthContextValue {
   user: AuthUser | null
   status: AuthStatus
-  pendingEmail: string | null
-  signup: (email: string, marketingConsent: boolean) => Promise<void>
-  resendMagicLink: () => Promise<void>
-  clearPending: () => void
+  signup: (email: string, marketingConsent: boolean, captchaToken: string) => Promise<{ error?: string }>
   logout: () => void
 }
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [status, setStatus] = useState<AuthStatus>('loading')
-  const [pendingEmail, setPendingEmail] = useState<string | null>(() => {
-    try {
-      return window.localStorage.getItem('sd_pending_email')
-    } catch {
-      return null
-    }
-  })
 
   // Hydrate user from Supabase session on mount + listen for auth changes
   useEffect(() => {
@@ -50,9 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function handleSession(session: Session | null) {
     if (session?.user) {
-      try { window.localStorage.removeItem('sd_pending_email') } catch { /* ignore */ }
-      setPendingEmail(null)
-
       // Fetch profile for marketing consent
       const { data: profile } = await supabase
         .from('profiles')
@@ -60,78 +49,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', session.user.id)
         .single()
 
-      // Apply any pending marketing consent from before magic link
-      const pendingConsent = window.localStorage.getItem('sd_pending_marketing')
-      if (pendingConsent !== null) {
-        const consent = pendingConsent === 'true'
-        const timestamp = consent ? new Date().toISOString() : null
-        await supabase.from('profiles').update({
-          marketing_consent: consent,
-          consent_timestamp: timestamp,
-        }).eq('id', session.user.id)
-
-        window.localStorage.removeItem('sd_pending_marketing')
-
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          marketingConsent: consent,
-          consentTimestamp: timestamp,
-        })
-      } else {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          marketingConsent: profile?.marketing_consent || false,
-          consentTimestamp: profile?.consent_timestamp || null,
-        })
-      }
+      setUser({
+        id: session.user.id,
+        email: session.user.email || '',
+        marketingConsent: profile?.marketing_consent || false,
+        consentTimestamp: profile?.consent_timestamp || null,
+      })
 
       setStatus('authenticated')
     } else {
       setUser(null)
-      const hasPending = !!window.localStorage.getItem('sd_pending_email')
-      setStatus(hasPending ? 'pending_magic_link' : 'unauthenticated')
+      setStatus('unauthenticated')
     }
   }
 
-  const signup = useCallback(async (email: string, marketingConsent: boolean) => {
+  const signup = useCallback(async (email: string, marketingConsent: boolean, captchaToken: string): Promise<{ error?: string }> => {
     try {
-      window.localStorage.setItem('sd_pending_email', email)
-      window.localStorage.setItem('sd_pending_marketing', String(marketingConsent))
-    } catch { /* ignore */ }
+      // Call the create-user Edge Function
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, marketingConsent, captchaToken }),
+      })
 
-    setPendingEmail(email)
-    setStatus('pending_magic_link')
+      const data = await res.json()
 
-    const redirectUrl = window.location.origin + '/'
+      if (!res.ok) {
+        return { error: data.error || 'Signup failed' }
+      }
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectUrl },
-    })
+      // Use the token_hash to establish a session
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: data.token_hash,
+        type: 'magiclink',
+      })
 
-    if (error) {
-      console.error('Magic link error:', error.message)
+      if (verifyError) {
+        console.error('Session verification error:', verifyError.message)
+        return { error: 'Failed to sign in. Please try again.' }
+      }
+
+      // Session will be picked up by onAuthStateChange listener
+      return {}
+    } catch (err) {
+      console.error('Signup error:', err)
+      return { error: 'Network error. Please try again.' }
     }
-  }, [])
-
-  const resendMagicLink = useCallback(async () => {
-    if (!pendingEmail) return
-    const redirectUrl = window.location.origin + '/'
-    await supabase.auth.signInWithOtp({
-      email: pendingEmail,
-      options: { emailRedirectTo: redirectUrl },
-    })
-  }, [pendingEmail])
-
-  const clearPending = useCallback(() => {
-    setPendingEmail(null)
-    setStatus('unauthenticated')
-    try {
-      window.localStorage.removeItem('sd_pending_email')
-      window.localStorage.removeItem('sd_pending_marketing')
-    } catch { /* ignore */ }
   }, [])
 
   const logout = useCallback(() => {
@@ -142,13 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.localStorage.removeItem('sd_day')
       window.localStorage.removeItem('sd_stats')
       window.localStorage.removeItem('sd_history')
-      window.localStorage.removeItem('sd_pending_email')
-      window.localStorage.removeItem('sd_pending_marketing')
     } catch { /* ignore */ }
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, status, pendingEmail, signup, resendMagicLink, clearPending, logout }}>
+    <AuthContext.Provider value={{ user, status, signup, logout }}>
       {children}
     </AuthContext.Provider>
   )
