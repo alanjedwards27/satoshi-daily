@@ -26,7 +26,7 @@ function buildResultText(opts: ShareData): string {
 }
 
 function buildPreGuessText(targetTime: string): string {
-  return `I just made my daily Bitcoin prediction on @SatoshiDailyApp 🎯\n\nTarget time: ${targetTime} today\n\nCan you beat me?\n${BASE_URL}`
+  return `I just made my daily Bitcoin prediction on @SatoshiDailyApp 🎯\n\nTarget time: ${targetTime} tomorrow\n\nCan you beat me?\n${BASE_URL}`
 }
 
 // --- Share to X ---
