@@ -27,7 +27,8 @@ export default function ShareModal({ open, onClose, shareData, prediction, actua
 
   useEffect(() => {
     if (open) {
-      const url = generateShareCard({
+      setCopied(false)
+      generateShareCard({
         date: shareData.date,
         targetTime: shareData.targetTime,
         prediction,
@@ -37,9 +38,7 @@ export default function ShareModal({ open, onClose, shareData, prediction, actua
         tier,
         streak: shareData.streak,
         isWinner,
-      })
-      setCardUrl(url)
-      setCopied(false)
+      }).then(setCardUrl)
     }
   }, [open, shareData, prediction, actual, tier, isWinner])
 

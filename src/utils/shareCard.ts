@@ -17,9 +17,23 @@ function formatNum(n: number): string {
 }
 
 /**
+ * Preload the logo image once so share cards generate instantly.
+ */
+let logoImg: HTMLImageElement | null = null
+const logoPromise = new Promise<HTMLImageElement>((resolve) => {
+  const img = new Image()
+  img.onload = () => { logoImg = img; resolve(img) }
+  img.onerror = () => resolve(img) // fallback: draw without logo
+  img.src = '/logo.png'
+})
+
+/**
  * Generates a share card as a canvas and returns it as a data URL (PNG).
  */
-export function generateShareCard(data: ShareCardData): string {
+export async function generateShareCard(data: ShareCardData): Promise<string> {
+  // Ensure logo is loaded
+  await logoPromise
+
   const W = 600
   const H = 400
   const canvas = document.createElement('canvas')
@@ -39,15 +53,19 @@ export function generateShareCard(data: ShareCardData): string {
   ctx.fillRect(0, 0, W, 5)
 
   // Logo area
-  // Bitcoin circle
-  ctx.fillStyle = '#f7931a'
-  ctx.beginPath()
-  ctx.arc(40, 36, 16, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = '#fff'
-  ctx.font = 'bold 16px monospace'
-  ctx.textAlign = 'center'
-  ctx.fillText('₿', 40, 42)
+  if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+    ctx.drawImage(logoImg, 20, 18, 36, 36)
+  } else {
+    // Fallback: draw ₿ circle
+    ctx.fillStyle = '#f7931a'
+    ctx.beginPath()
+    ctx.arc(40, 36, 16, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#fff'
+    ctx.font = 'bold 16px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText('₿', 40, 42)
+  }
 
   // "Satoshi Daily" text
   ctx.fillStyle = '#ffffff'
