@@ -6,7 +6,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const WIN_THRESHOLD = 500
-const DAILY_PRIZE_POOL = 5.00 // £5
+const DAILY_PRIZE_POOL = 5.00 // $5
 const ADMIN_EMAIL = 'alan@satoshidaily.app' // Change to your email
 
 // --- Price Oracle: Median of 3 sources ---
@@ -103,7 +103,7 @@ async function sendAdminEmail(summary: DaySummary) {
           <td style="padding:6px 12px;border-bottom:1px solid #eee">$${w.predicted.toLocaleString()}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #eee">$${w.diff.toLocaleString()}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #eee">${w.tier}</td>
-          <td style="padding:6px 12px;border-bottom:1px solid #eee">£${w.share.toFixed(2)}</td>
+          <td style="padding:6px 12px;border-bottom:1px solid #eee">$${w.share.toFixed(2)}</td>
         </tr>`)
         .join('')
     : '<tr><td colspan="5" style="padding:12px;text-align:center;color:#999">No winners today</td></tr>'
@@ -116,7 +116,7 @@ async function sendAdminEmail(summary: DaySummary) {
         <p style="margin:4px 0"><strong>BTC Price:</strong> $${summary.btcPrice.toLocaleString()}</p>
         <p style="margin:4px 0"><strong>Total Predictions:</strong> ${summary.totalPredictions}</p>
         <p style="margin:4px 0"><strong>Winners:</strong> ${summary.winnerCount}</p>
-        <p style="margin:4px 0"><strong>Total Payout:</strong> £${summary.totalPayout.toFixed(2)}</p>
+        <p style="margin:4px 0"><strong>Total Payout:</strong> $${summary.totalPayout.toFixed(2)}</p>
         ${summary.closestDiff !== null ? `<p style="margin:4px 0"><strong>Closest Prediction:</strong> $${summary.closestDiff} off</p>` : ''}
       </div>
 

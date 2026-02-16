@@ -12,10 +12,10 @@ export interface PrizeTier {
   amount: string
 }
 
-/** Daily prize pool is £5, split between all qualifying winners (within $500). */
+/** Daily prize pool is $5, split between all qualifying winners (within $500). */
 const WIN_THRESHOLD = 500
 
-export const DAILY_PRIZE_POOL = '£5'
+export const DAILY_PRIZE_POOL = '$5'
 
 export function calculateAccuracy(prediction: number, actual: number): AccuracyResult {
   const difference = Math.abs(prediction - actual)

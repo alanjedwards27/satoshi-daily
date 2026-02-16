@@ -80,7 +80,7 @@ export default function ResultCard() {
                 ⚡ You're a winner! — {prize.label}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: '1.4' }}>
-                You're in the £5 daily prize pool. Your share is paid to your Lightning wallet within 24h.
+                You're in the $5 daily prize pool. Your share is paid to your Lightning wallet within 24h.
               </div>
             </div>
           ) : (

@@ -135,7 +135,7 @@ export function generateShareCard(data: ShareCardData): string {
   // Winner badge
   if (data.isWinner) {
     const badgeY = 330
-    const badgeText = '⚡ Winner — £5 prize pool'
+    const badgeText = '⚡ Winner — $5 prize pool'
     ctx.fillStyle = 'rgba(247, 147, 26, 0.15)'
     ctx.beginPath()
     ctx.roundRect(W / 2 - 120, badgeY, 240, 30, 8)

@@ -8,7 +8,7 @@ import PreviousWinners from './PreviousWinners'
 import styles from './SignupForm.module.css'
 
 const SELLING_POINTS = [
-  { icon: '₿', text: '£5 daily BTC prize pool' },
+  { icon: '₿', text: '$5 daily BTC prize pool' },
   { icon: '⚡', text: 'Winnings paid via Lightning' },
   { icon: '🎯', text: '100% free to play, always' },
   { icon: '𝕏', text: 'Share on X for a bonus guess' },
@@ -47,7 +47,7 @@ export default function SignupForm() {
           <span className={styles.btcCircle}>₿</span>
         </div>
         <h1>Predict Bitcoin.<br />Win Bitcoin.</h1>
-        <p>Free daily price prediction game. One guess per day. Predict within $500 of the real price and share the £5 daily prize pool — paid straight to your Lightning wallet.</p>
+        <p>Free daily price prediction game. One guess per day. Predict within $500 of the real price and share the $5 daily prize pool — paid straight to your Lightning wallet.</p>
       </motion.div>
 
       <motion.div

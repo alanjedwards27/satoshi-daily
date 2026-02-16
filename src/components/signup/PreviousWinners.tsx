@@ -140,7 +140,7 @@ export default function PreviousWinners() {
       </div>
 
       <div className={styles.footer}>
-        £5 daily pot split equally between all winners. Paid in BTC via Lightning Network within 24 hours.
+        $5 daily pot split equally between all winners. Paid in BTC via Lightning Network within 24 hours.
       </div>
     </motion.div>
   )

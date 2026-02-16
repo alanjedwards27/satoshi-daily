@@ -57,7 +57,7 @@ export default function TermsPage() {
 
         <h3 style={h3Style}>Prize pool</h3>
         <ul style={ulStyle}>
-          <li>The daily prize pool is <strong>£5 (GBP)</strong>, paid in Bitcoin via the Lightning Network.</li>
+          <li>The daily prize pool is <strong>$5 (USD)</strong>, paid in Bitcoin via the Lightning Network.</li>
           <li>The prize pool is funded by Satoshi Daily. No entry fees or contributions from players are required.</li>
         </ul>
 
@@ -74,7 +74,7 @@ export default function TermsPage() {
           <li><strong>Within $100</strong> — qualifies for the prize pool.</li>
           <li><strong>Within $500</strong> — qualifies for the prize pool.</li>
         </ul>
-        <p>All qualifying tiers receive an equal share. For example, if 5 players qualify, each receives £1.00 worth of BTC.</p>
+        <p>All qualifying tiers receive an equal share. For example, if 5 players qualify, each receives $1.00 worth of BTC.</p>
 
         <h3 style={h3Style}>Prize distribution</h3>
         <ul style={ulStyle}>
@@ -110,7 +110,7 @@ export default function TermsPage() {
         </ul>
 
         <h2 style={h2Style}>7. Limitation of Liability</h2>
-        <p>To the fullest extent permitted by law, Satoshi Daily's total liability to you for any claims arising from or related to the Service shall not exceed <strong>£5</strong> (the value of one day's prize pool).</p>
+        <p>To the fullest extent permitted by law, Satoshi Daily's total liability to you for any claims arising from or related to the Service shall not exceed <strong>$5</strong> (the value of one day's prize pool).</p>
         <p>We are not liable for any indirect, incidental, special, consequential, or punitive damages.</p>
 
         <h2 style={h2Style}>8. Service Availability</h2>

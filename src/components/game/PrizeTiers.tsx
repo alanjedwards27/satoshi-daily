@@ -22,7 +22,7 @@ export default function PrizeTiers() {
           fontWeight: 700,
           color: 'var(--accent)',
         }}>
-          £5 in BTC
+          $5 in BTC
         </div>
         <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
           Daily prize pool — split between all winners
@@ -71,7 +71,7 @@ export default function PrizeTiers() {
       }}>
         <span style={{ fontSize: '16px' }}>⚡</span>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-          Paid via <strong style={{ color: 'var(--text-primary)' }}>Lightning Network</strong>. £5 daily pot split equally between all winners. No rollover — unclaimed prizes are not carried forward.
+          Paid via <strong style={{ color: 'var(--text-primary)' }}>Lightning Network</strong>. $5 daily pot split equally between all winners. No rollover — unclaimed prizes are not carried forward.
         </span>
       </div>
     </Card>
