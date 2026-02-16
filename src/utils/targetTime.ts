@@ -18,27 +18,25 @@ export interface TargetTimeInfo {
 }
 
 /**
- * Generate a deterministic target time from tomorrow's date.
+ * Generate a deterministic target time for today's date.
  * Same seed = same time for all users.
+ * Players predict before the target time, result reveals when it passes.
  */
 export function getTargetTime(forDate?: Date): TargetTimeInfo {
   const now = forDate || new Date()
-  // Target is always tomorrow
-  const tomorrow = new Date(now)
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+  const today = new Date(now)
 
-  const dateStr = tomorrow.toISOString().split('T')[0] // YYYY-MM-DD
+  const dateStr = today.toISOString().split('T')[0] // YYYY-MM-DD
   const seed = hashCode(dateStr + 'satoshi')
 
   const hours = (Math.abs(seed) % 18) + 3 // 03:00 - 20:59 UTC
   const minutes = Math.abs((seed * 31) % 60)
 
-  const targetDate = new Date(tomorrow)
+  const targetDate = new Date(today)
   targetDate.setUTCHours(hours, minutes, 0, 0)
 
-  // Predictions lock at midnight GMT (start of the target day)
-  const lockDate = new Date(tomorrow)
-  lockDate.setUTCHours(0, 0, 0, 0)
+  // Predictions lock at the target time (can predict any time before it)
+  const lockDate = new Date(targetDate)
 
   const formatted = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} UTC`
 

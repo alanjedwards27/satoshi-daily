@@ -31,10 +31,9 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const supabase = createClient(supabaseUrl, serviceKey)
 
-  // Seed tomorrow's result
-  const tomorrow = new Date()
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
-  const dateStr = tomorrow.toISOString().split('T')[0]
+  // Seed today's result (cron runs at 00:01 UTC, so this seeds the new day)
+  const today = new Date()
+  const dateStr = today.toISOString().split('T')[0]
 
   const { hours, minutes } = getTargetTimeForDate(dateStr)
 
