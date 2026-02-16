@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import Button from '../shared/Button'
 import AdSlot from '../shared/AdSlot'
 import GamePreview from './GamePreview'
+import RecentPredictions from './RecentPredictions'
 import PreviousWinners from './PreviousWinners'
 import styles from './SignupForm.module.css'
 
@@ -136,6 +137,8 @@ export default function SignupForm() {
       </motion.div>
 
       <GamePreview />
+
+      <RecentPredictions />
 
       {/* Ad between game preview and winners — below the fold, non-intrusive */}
       <AdSlot slot="signup-mid" format="banner" label="Sponsored" />
