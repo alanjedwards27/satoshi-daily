@@ -9,6 +9,7 @@ import GuessCounter from '../components/game/GuessCounter'
 import PredictionInput from '../components/game/PredictionInput'
 import BonusCard from '../components/game/BonusCard'
 import LockedState from '../components/game/LockedState'
+import ShareCard from '../components/game/ShareCard'
 import ResultCard from '../components/game/ResultCard'
 import Leaderboard from '../components/game/Leaderboard'
 import History from '../components/game/History'
@@ -99,6 +100,7 @@ export default function GamePage() {
             {showBonus && <BonusCard />}
             {canGuess && <PredictionInput />}
             {!canGuess && <LockedState />}
+            {!canGuess && <ShareCard />}
           </motion.div>
         )}
 
