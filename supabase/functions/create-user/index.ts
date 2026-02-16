@@ -63,69 +63,41 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, serviceKey)
 
-    // Check if user already exists
-    const { data: existingUsers } = await supabase.auth.admin.listUsers()
-    const existingUser = existingUsers?.users?.find(
-      (u: any) => u.email?.toLowerCase() === email.toLowerCase()
-    )
-
-    if (existingUser) {
-      // User exists — generate a magic link token to sign them in
-      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-        type: 'magiclink',
-        email: email.toLowerCase(),
-      })
-
-      if (linkError || !linkData) {
-        return new Response(
-          JSON.stringify({ error: linkError?.message || 'Failed to generate login link' }),
-          { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Update marketing consent
-      await supabase.from('profiles').update({
-        marketing_consent: !!marketingConsent,
-        consent_timestamp: marketingConsent ? new Date().toISOString() : null,
-      }).eq('id', existingUser.id)
-
-      // Extract token_hash from the generated link properties
-      const tokenHash = linkData.properties?.hashed_token
-
-      return new Response(
-        JSON.stringify({
-          token_hash: tokenHash,
-          email: email.toLowerCase(),
-          existing: true,
-        }),
-        { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // New user — create with auto-confirmed email
+    // Try to create the user first — if they already exist, createUser will fail
     const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
       email: email.toLowerCase(),
       password: crypto.randomUUID(),
       email_confirm: true,
     })
 
-    if (createError || !newUser?.user) {
-      return new Response(
-        JSON.stringify({ error: createError?.message || 'Failed to create user' }),
-        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-      )
+    let isExisting = false
+
+    if (createError) {
+      // User already exists — this is a returning user logging back in
+      if (createError.message?.includes('already been registered') ||
+          createError.message?.includes('already exists') ||
+          createError.status === 422) {
+        isExisting = true
+      } else {
+        return new Response(
+          JSON.stringify({ error: createError.message || 'Failed to create user' }),
+          { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+        )
+      }
     }
 
-    // Wait briefly for the trigger to create the profile
-    await new Promise(resolve => setTimeout(resolve, 500))
+    if (!isExisting && newUser?.user) {
+      // New user — wait briefly for the trigger to create the profile
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-    // Update marketing consent in profiles
-    await supabase.from('profiles').update({
-      marketing_consent: !!marketingConsent,
-      consent_timestamp: marketingConsent ? new Date().toISOString() : null,
-    }).eq('id', newUser.user.id)
+      // Update marketing consent in profiles
+      await supabase.from('profiles').update({
+        marketing_consent: !!marketingConsent,
+        consent_timestamp: marketingConsent ? new Date().toISOString() : null,
+      }).eq('id', newUser.user.id)
+    }
 
-    // Generate a magic link token so the client can establish a session
+    // Generate a magic link token to establish a session (works for both new and existing)
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: 'magiclink',
       email: email.toLowerCase(),
@@ -138,13 +110,21 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Update marketing consent for returning users (generateLink returns user data)
+    if (isExisting && linkData.user?.id) {
+      await supabase.from('profiles').update({
+        marketing_consent: !!marketingConsent,
+        consent_timestamp: marketingConsent ? new Date().toISOString() : null,
+      }).eq('id', linkData.user.id)
+    }
+
     const tokenHash = linkData.properties?.hashed_token
 
     return new Response(
       JSON.stringify({
         token_hash: tokenHash,
         email: email.toLowerCase(),
-        existing: false,
+        existing: isExisting,
       }),
       { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
     )
