@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
-import { maskEmail, formatPriceWithDollar } from '../../utils/format'
+import { formatPriceWithDollar } from '../../utils/format'
 import styles from './RecentPredictions.module.css'
 
 interface PredictionRow {
-  email: string
   predicted_price: number
   created_at: string
 }
@@ -28,10 +27,9 @@ export default function RecentPredictions() {
   useEffect(() => {
     async function fetchRecent() {
       try {
-        // Fetch the most recent predictions across all dates
         const { data } = await supabase
           .from('predictions')
-          .select('predicted_price, created_at, profiles!inner(email)')
+          .select('predicted_price, created_at')
           .order('created_at', { ascending: false })
           .limit(8)
 
@@ -41,7 +39,6 @@ export default function RecentPredictions() {
         }
 
         const rows: PredictionRow[] = data.map((p: any) => ({
-          email: (p.profiles as any).email,
           predicted_price: Number(p.predicted_price),
           created_at: p.created_at,
         }))
@@ -87,7 +84,7 @@ export default function RecentPredictions() {
         {predictions.map((p, i) => (
           <div key={i} className={styles.row}>
             <div className={styles.rowLeft}>
-              <span className={styles.email}>{maskEmail(p.email)}</span>
+              <span className={styles.player}>Player {i + 1}</span>
               <span className={styles.time}>{timeAgo(p.created_at)}</span>
             </div>
             <div className={styles.rowRight}>

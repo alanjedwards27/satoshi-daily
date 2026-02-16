@@ -91,12 +91,10 @@
   min-width: 0;
 }
 
-.email {
+.player {
   font-size: 13px;
   color: var(--text-secondary);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .time {
