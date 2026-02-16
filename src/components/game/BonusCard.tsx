@@ -13,7 +13,7 @@ export default function BonusCard() {
   const leftPageRef = useRef(false)
   const platformRef = useRef<string>('unknown')
 
-  const shareText = `I just made my daily Bitcoin prediction on Satoshi Daily 🎯\n\nTarget time: ${targetTime.formatted} tomorrow\n\nCan you beat me?\n${BASE_URL}`
+  const shareText = `I just made my daily Bitcoin prediction on @SatoshiDailyApp 🎯\n\nTarget time: ${targetTime.formatted} tomorrow\n\nCan you beat me?\n${BASE_URL}`
 
   function startWaiting(platform: string) {
     shareTimeRef.current = Date.now()
