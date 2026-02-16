@@ -42,6 +42,9 @@ export default function CodeInput() {
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
           Click the link in your email to sign in. You can close this tab — the link will bring you right back.
         </p>
+        <p style={{ fontSize: '12px', color: 'var(--accent)', marginTop: '10px', fontWeight: 600 }}>
+          ⚠️ Check your spam/junk folder if you don't see it within a minute.
+        </p>
       </motion.div>
 
       <motion.div
