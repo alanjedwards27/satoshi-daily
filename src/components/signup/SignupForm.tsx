@@ -24,6 +24,7 @@ declare global {
     turnstile?: {
       render: (container: string | HTMLElement, options: any) => string
       reset: (widgetId: string) => void
+      remove: (widgetId: string) => void
     }
     onTurnstileLoad?: () => void
   }
@@ -45,11 +46,9 @@ export default function SignupForm() {
 
   const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
-  // Load Turnstile script
+  // Load Turnstile script + render widget
   useEffect(() => {
-    if (document.getElementById('turnstile-script')) return
-
-    window.onTurnstileLoad = () => {
+    function renderWidget() {
       if (captchaRef.current && window.turnstile && !widgetIdRef.current) {
         widgetIdRef.current = window.turnstile.render(captchaRef.current, {
           sitekey: TURNSTILE_SITE_KEY,
@@ -61,11 +60,30 @@ export default function SignupForm() {
       }
     }
 
-    const script = document.createElement('script')
-    script.id = 'turnstile-script'
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
-    script.async = true
-    document.head.appendChild(script)
+    // Script already loaded (e.g. returning after logout) — just render the widget
+    if (window.turnstile) {
+      renderWidget()
+      return
+    }
+
+    // First load — set up callback and inject script
+    if (!document.getElementById('turnstile-script')) {
+      window.onTurnstileLoad = renderWidget
+
+      const script = document.createElement('script')
+      script.id = 'turnstile-script'
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
+      script.async = true
+      document.head.appendChild(script)
+    }
+
+    return () => {
+      // Clean up widget on unmount so it can be re-rendered next mount
+      if (widgetIdRef.current && window.turnstile) {
+        try { window.turnstile.remove(widgetIdRef.current) } catch { /* ignore */ }
+        widgetIdRef.current = null
+      }
+    }
   }, [])
 
   async function handleSubmit(e: FormEvent) {
