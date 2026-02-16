@@ -44,7 +44,7 @@ export default function SignupForm() {
         transition={{ delay: 0.1 }}
       >
         <div className={styles.btcBadge}>
-          <span className={styles.btcCircle}>₿</span>
+          <img src="/logo.png" alt="Satoshi Daily" className={styles.btcLogo} />
         </div>
         <h1>Predict Bitcoin.<br />Win Bitcoin.</h1>
         <p>Free daily price prediction game. One guess per day. Predict within $500 of the real price and share the $5 daily prize pool — paid straight to your Lightning wallet.</p>

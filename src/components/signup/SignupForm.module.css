@@ -12,18 +12,10 @@
   margin-bottom: var(--space-lg);
 }
 
-.btcCircle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  background: var(--accent);
-  border-radius: 50%;
-  color: #fff;
-  font-family: var(--font-mono);
-  font-size: 28px;
-  font-weight: 700;
+.btcLogo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
 }
 
 .heading h1 {
