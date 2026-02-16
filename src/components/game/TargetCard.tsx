@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion'
 import { useGame } from '../../context/GameContext'
+import { useCountdown } from '../../hooks/useCountdown'
 import { formatPriceWithDollar } from '../../utils/format'
 import { formatDateShort } from '../../utils/targetTime'
 
 export default function TargetCard() {
   const { btcPrice, btcChange24h, btcLoading, targetTime } = useGame()
+  const lockCountdown = useCountdown(targetTime.lockDate)
+  const pad = (n: number) => String(n).padStart(2, '0')
 
   const isPositive = btcChange24h >= 0
   const changeColor = isPositive ? 'var(--green)' : 'var(--red)'
@@ -113,13 +116,26 @@ export default function TargetCard() {
         </div>
       </div>
 
-      {/* Lock time notice */}
+      {/* Lock time notice with countdown */}
       <div style={{
         textAlign: 'center',
         fontSize: '12px',
         color: 'var(--text-muted)',
       }}>
-        Predictions lock at <strong style={{ color: 'var(--text-primary)' }}>midnight GMT</strong>
+        Predictions lock at <strong style={{ color: 'var(--text-primary)' }}>midnight UTC</strong>
+        {!lockCountdown.isExpired && (
+          <span>
+            {' · '}
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              color: 'var(--accent)',
+            }}>
+              {pad(lockCountdown.hours)}:{pad(lockCountdown.minutes)}:{pad(lockCountdown.seconds)}
+            </span>
+            {' left'}
+          </span>
+        )}
       </div>
     </motion.div>
   )

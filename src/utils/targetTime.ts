@@ -37,7 +37,7 @@ export function getTargetTime(forDate?: Date): TargetTimeInfo {
   const targetDate = new Date(tomorrow)
   targetDate.setUTCHours(hours, minutes, 0, 0)
 
-  // Predictions lock at midnight GMT (start of the target day)
+  // Predictions lock at midnight UTC (start of the target day)
   const lockDate = new Date(tomorrow)
   lockDate.setUTCHours(0, 0, 0, 0)
 

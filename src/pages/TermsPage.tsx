@@ -38,7 +38,7 @@ export default function TermsPage() {
         <ul style={ulStyle}>
           <li>Each day, a <strong>target time</strong> is randomly determined (between 9:00 and 20:59 UTC).</li>
           <li>You predict what the price of Bitcoin (BTC/USD) will be at that target time.</li>
-          <li>Predictions must be submitted before <strong>midnight GMT</strong> (00:00 UTC) on the game day.</li>
+          <li>Predictions must be submitted before <strong>midnight UTC</strong> (00:00 UTC) on the game day.</li>
           <li>Each player gets <strong>one free prediction per day</strong>.</li>
           <li>A <strong>bonus second prediction</strong> can be earned by sharing the game on social media or via email/link. This bonus is optional and costs nothing.</li>
         </ul>
