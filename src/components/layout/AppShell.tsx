@@ -17,6 +17,17 @@ export default function AppShell({ children }: AppShellProps) {
       <div className={styles.content}>
         {children}
       </div>
+      <footer className={styles.footer}>
+        <a
+          href="https://x.com/SatoshiDailyApp"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.followLink}
+        >
+          <span className={styles.xIcon}>𝕏</span>
+          Follow @SatoshiDailyApp
+        </a>
+      </footer>
     </div>
   )
 }

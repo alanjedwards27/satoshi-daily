@@ -43,3 +43,34 @@
   flex-direction: column;
   gap: var(--space-lg);
 }
+
+.footer {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl) 0 var(--space-lg);
+}
+
+.followLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full, 999px);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.followLink:hover {
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.08));
+  border-color: var(--text-muted);
+}
+
+.xIcon {
+  font-size: 16px;
+  font-weight: 800;
+}
