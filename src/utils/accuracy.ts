@@ -12,8 +12,8 @@ export interface PrizeTier {
   amount: string
 }
 
-/** Daily prize pool is $5, split between all qualifying winners (within $500). */
-const WIN_THRESHOLD = 500
+/** Daily prize pool is $5, split between all exact-match winners. */
+const WIN_THRESHOLD = 0 // Exact match only
 
 export const DAILY_PRIZE_POOL = '$5'
 
@@ -37,9 +37,7 @@ function getAccuracyTier(accuracy: number): AccuracyTier {
 
 function getPrizeTier(difference: number): PrizeTier | null {
   if (difference <= WIN_THRESHOLD) {
-    if (difference <= 1) return { label: 'EXACT!', amount: DAILY_PRIZE_POOL }
-    if (difference <= 100) return { label: 'Within $100!', amount: DAILY_PRIZE_POOL }
-    return { label: 'Within $500!', amount: DAILY_PRIZE_POOL }
+    return { label: 'EXACT!', amount: DAILY_PRIZE_POOL }
   }
   return null
 }

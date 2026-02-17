@@ -92,7 +92,7 @@ export default function ResultCard() {
               fontSize: '13px',
               color: 'var(--text-muted)',
             }}>
-              Not within $500 today — try again tomorrow!
+              Not exact today — try again tomorrow!
             </div>
           )}
 

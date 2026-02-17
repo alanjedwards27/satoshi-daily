@@ -13,6 +13,7 @@ import ShareCard from '../components/game/ShareCard'
 import ResultCard from '../components/game/ResultCard'
 import Leaderboard from '../components/game/Leaderboard'
 import History from '../components/game/History'
+import PastResults from '../components/game/PastResults'
 import SponsorCard from '../components/shared/SponsorCard'
 import { useGame } from '../context/GameContext'
 import { usePageView } from '../hooks/usePageView'
@@ -121,6 +122,7 @@ export default function GamePage() {
       <SponsorCard />
 
       <PrizeTiers />
+      <PastResults />
       <History />
     </AppShell>
   )
