@@ -44,10 +44,14 @@
   gap: var(--space-lg);
 }
 
+.sponsor {
+  padding-top: var(--space-xl);
+}
+
 .footer {
   display: flex;
   justify-content: center;
-  padding: var(--space-xl) 0 var(--space-lg);
+  padding: var(--space-lg) 0;
 }
 
 .followLink {
