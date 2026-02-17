@@ -99,7 +99,7 @@ export default function EmailGate() {
           Unlock your 2nd guess
         </div>
         <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5' }}>
-          Enter your email to get a second prediction. Your best guess counts towards the $5 daily prize pool.
+          Sign up and all your guesses count towards the $5 daily prize pool — including the one you just made.
         </div>
 
         <motion.div

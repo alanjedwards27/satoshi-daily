@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../../context/GameContext'
+import { useAuth } from '../../context/AuthContext'
 import { useCountdown } from '../../hooks/useCountdown'
 import { formatPrice, parsePriceInput } from '../../utils/format'
 
@@ -15,6 +16,7 @@ const QUICK_ADJUSTS = [
 
 export default function PredictionInput() {
   const { btcPrice, submitPrediction, targetTime } = useGame()
+  const { user } = useAuth()
   const [value, setValue] = useState(btcPrice)
   const lockCountdown = useCountdown(targetTime.lockDate)
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -194,7 +196,10 @@ export default function PredictionInput() {
         color: 'var(--text-muted)',
         marginTop: '10px',
       }}>
-        Predict the exact price to win a share of the $5 daily pot
+        {user
+          ? 'Predict the exact price to win a share of the $5 daily pot'
+          : '🎯 Free guess — sign up after to enter all guesses into the $5 daily prize pool'
+        }
       </div>
 
       {/* Lock countdown */}

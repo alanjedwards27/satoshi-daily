@@ -191,8 +191,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (mergedPredictions.length > 0 || bonusUnlocked) {
           const actualPrice = dailyResult?.actual_price ? Number(dailyResult.actual_price) : null
 
+          // Determine max guesses for this user state
+          const syncMaxGuesses = bonusUnlocked ? 3 : 2 // authenticated user has at least 2
+
+          // Only compute result if they've used all their guesses AND actual price exists
           let result: AccuracyResult | null = null
-          if (actualPrice && mergedPredictions.length > 0) {
+          if (actualPrice && mergedPredictions.length > 0 && mergedPredictions.length >= syncMaxGuesses) {
             const bestPrediction = mergedPredictions.reduce((best, p) =>
               Math.abs(p - actualPrice) < Math.abs(best - actualPrice) ? p : best
             , mergedPredictions[0])
@@ -395,13 +399,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const revealResult = useCallback(() => doReveal(), [doReveal])
 
   // Auto-reveal: check daily_results from Supabase when target time has passed
+  // Only reveal if user has no more guesses available
   useEffect(() => {
-    if (dayData.result || dayData.predictions.length === 0) return
+    if (dayData.result || dayData.predictions.length === 0 || canGuess) return
 
     const now = new Date()
     if (now < targetTime.targetDate) return
 
-    // Target time has passed — check Supabase for recorded price
+    // Target time has passed and all guesses used — check Supabase for recorded price
     async function checkResult() {
       const { data } = await supabase
         .from('daily_results')
@@ -420,7 +425,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
 
     checkResult()
-  }, [phase, dayData.result, dayData.predictions.length, targetTime.targetDate, today, btcPrice, doReveal])
+  }, [phase, dayData.result, dayData.predictions.length, canGuess, targetTime.targetDate, today, btcPrice, doReveal])
 
   const forceReveal = useCallback(() => {
     doReveal(btcPrice)

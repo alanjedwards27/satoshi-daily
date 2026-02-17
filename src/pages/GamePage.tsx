@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import AppShell from '../components/layout/AppShell'
 import UserBar from '../components/game/UserBar'
 import StatsBar from '../components/game/StatsBar'
-import PrizeTiers from '../components/game/PrizeTiers'
 import TargetCard from '../components/game/TargetCard'
 import GuessCounter from '../components/game/GuessCounter'
 import PredictionInput from '../components/game/PredictionInput'
@@ -15,6 +14,8 @@ import ResultCard from '../components/game/ResultCard'
 import Leaderboard from '../components/game/Leaderboard'
 import History from '../components/game/History'
 import PastResults from '../components/game/PastResults'
+import RecentPredictions from '../components/signup/RecentPredictions'
+import PreviousWinners from '../components/signup/PreviousWinners'
 import SponsorCard from '../components/shared/SponsorCard'
 import { useGame } from '../context/GameContext'
 import { useAuth } from '../context/AuthContext'
@@ -30,6 +31,9 @@ export default function GamePage() {
   const [confirmed, setConfirmed] = useState(dayData.predictions.length > 0)
 
   const showPredictionFlow = phase === 'predicting' && confirmed
+
+  // Is this an anonymous user who used their free guess and needs to sign up?
+  const isAnonLocked = phase === 'locked' && needsEmail
 
   return (
     <AppShell>
@@ -96,7 +100,23 @@ export default function GamePage() {
           </motion.div>
         )}
 
-        {phase === 'locked' && (
+        {/* Anonymous user made their free guess — show locked prediction + email gate */}
+        {isAnonLocked && (
+          <motion.div
+            key="anon-locked"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
+          >
+            <GuessCounter />
+            <LockedState />
+            <EmailGate />
+          </motion.div>
+        )}
+
+        {/* Fully locked — authenticated user used all guesses */}
+        {phase === 'locked' && !needsEmail && (
           <motion.div
             key="locked"
             initial={{ opacity: 0 }}
@@ -105,8 +125,16 @@ export default function GamePage() {
             style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
           >
             <GuessCounter />
-            <LockedState />
-            <ShareCard />
+
+            {/* Still need to share for 3rd guess */}
+            {needsShare && <BonusCard />}
+
+            {/* Can still make a guess (just unlocked via email or share) */}
+            {canGuess && <PredictionInput />}
+
+            {/* All guesses used — show locked state + share CTA */}
+            {!canGuess && <LockedState />}
+            {!canGuess && <ShareCard />}
           </motion.div>
         )}
 
@@ -126,9 +154,10 @@ export default function GamePage() {
 
       <SponsorCard />
 
-      <PrizeTiers />
       <PastResults />
+      <RecentPredictions />
       {user && <History />}
+      <PreviousWinners />
     </AppShell>
   )
 }
