@@ -85,7 +85,7 @@ export default function BonusCard() {
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎁</div>
         <div style={{ fontSize: '15px', fontWeight: 600, marginBottom: '4px' }}>
-          Want a second guess?
+          Want a 3rd guess?
         </div>
         <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5' }}>
           Share Satoshi Daily to unlock a bonus prediction. Your best guess counts.
@@ -100,7 +100,7 @@ export default function BonusCard() {
             color: 'var(--text-muted)',
             lineHeight: '1.5',
           }}>
-            Share it, then come back here to unlock your bonus guess…
+            Share it, then come back here to unlock your 3rd guess…
           </div>
         ) : (
           <div style={{

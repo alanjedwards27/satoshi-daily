@@ -7,6 +7,7 @@ import PrizeTiers from '../components/game/PrizeTiers'
 import TargetCard from '../components/game/TargetCard'
 import GuessCounter from '../components/game/GuessCounter'
 import PredictionInput from '../components/game/PredictionInput'
+import EmailGate from '../components/game/EmailGate'
 import BonusCard from '../components/game/BonusCard'
 import LockedState from '../components/game/LockedState'
 import ShareCard from '../components/game/ShareCard'
@@ -16,17 +17,16 @@ import History from '../components/game/History'
 import PastResults from '../components/game/PastResults'
 import SponsorCard from '../components/shared/SponsorCard'
 import { useGame } from '../context/GameContext'
+import { useAuth } from '../context/AuthContext'
 import { usePageView } from '../hooks/usePageView'
 
 export default function GamePage() {
   usePageView('game')
-  const { phase, dayData } = useGame()
-  const maxGuesses = dayData.bonusUnlocked ? 2 : 1
-  const canGuess = dayData.predictions.length < maxGuesses
-  const showBonus = dayData.predictions.length === 1 && !dayData.bonusUnlocked
+  const { phase, dayData, canGuess, needsEmail, needsShare } = useGame()
+  const { user } = useAuth()
 
   // Step 1: user must confirm they've seen the target before predicting
-  // Skip confirmation if they've already made a prediction (returning for bonus guess)
+  // Skip confirmation if they've already made a prediction
   const [confirmed, setConfirmed] = useState(dayData.predictions.length > 0)
 
   const showPredictionFlow = phase === 'predicting' && confirmed
@@ -34,7 +34,7 @@ export default function GamePage() {
   return (
     <AppShell>
       <UserBar />
-      <StatsBar />
+      {user && <StatsBar />}
       <TargetCard />
 
       <AnimatePresence mode="wait">
@@ -74,7 +74,7 @@ export default function GamePage() {
           </motion.div>
         )}
 
-        {/* Step 2: Prediction input */}
+        {/* Step 2: Prediction flow with inline gates */}
         {showPredictionFlow && (
           <motion.div
             key="predicting"
@@ -84,8 +84,15 @@ export default function GamePage() {
             style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
           >
             <GuessCounter />
+
+            {/* Can make a guess right now */}
             {canGuess && <PredictionInput />}
-            {showBonus && <BonusCard />}
+
+            {/* Gate: needs email for 2nd guess */}
+            {needsEmail && <EmailGate />}
+
+            {/* Gate: needs share for 3rd guess */}
+            {needsShare && <BonusCard />}
           </motion.div>
         )}
 
@@ -98,10 +105,8 @@ export default function GamePage() {
             style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
           >
             <GuessCounter />
-            {showBonus && <BonusCard />}
-            {canGuess && <PredictionInput />}
-            {!canGuess && <LockedState />}
-            {!canGuess && <ShareCard />}
+            <LockedState />
+            <ShareCard />
           </motion.div>
         )}
 
@@ -123,7 +128,7 @@ export default function GamePage() {
 
       <PrizeTiers />
       <PastResults />
-      <History />
+      {user && <History />}
     </AppShell>
   )
 }

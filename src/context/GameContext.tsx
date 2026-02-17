@@ -38,6 +38,12 @@ interface GameContextValue {
   stats: Stats
   history: HistoryEntry[]
 
+  // Guess tier info
+  maxGuesses: number          // 1 = free only, 2 = email unlocked, 3 = share unlocked
+  canGuess: boolean
+  needsEmail: boolean         // true when they need to sign up for guess 2
+  needsShare: boolean         // true when they need to share for guess 3
+
   // Price data
   btcPrice: number
   btcChange24h: number
@@ -98,13 +104,60 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [today, dayData.date, setDayData])
 
-  // Sync from Supabase on mount — hydrate localStorage cache with server data
+  // Sync anonymous predictions to Supabase when user signs up
   useEffect(() => {
     if (!user || synced) return
 
+    async function syncToServer() {
+      // If there are local predictions that haven't been saved to Supabase yet
+      // (i.e., the anonymous first guess), sync them now
+      if (dayData.predictions.length > 0 && dayData.date === today) {
+        for (let i = 0; i < dayData.predictions.length; i++) {
+          // Check if this prediction already exists on server
+          const { data: existing } = await supabase
+            .from('predictions')
+            .select('id')
+            .eq('user_id', user!.id)
+            .eq('game_date', today)
+            .eq('guess_number', i + 1)
+            .maybeSingle()
+
+          if (!existing) {
+            await supabase.from('predictions').insert({
+              user_id: user!.id,
+              game_date: today,
+              predicted_price: dayData.predictions[i],
+              guess_number: i + 1,
+            })
+          }
+        }
+
+        // Sync bonus unlock if it exists locally
+        if (dayData.bonusUnlocked) {
+          const { data: existingBonus } = await supabase
+            .from('bonus_unlocks')
+            .select('id')
+            .eq('user_id', user!.id)
+            .eq('game_date', today)
+            .maybeSingle()
+
+          if (!existingBonus) {
+            await supabase.from('bonus_unlocks').insert({
+              user_id: user!.id,
+              game_date: today,
+              platform: 'synced',
+            })
+          }
+        }
+      }
+    }
+
     async function syncFromServer() {
       try {
-        // Fetch today's predictions for this user
+        // First push any local predictions to server
+        await syncToServer()
+
+        // Then fetch server state (source of truth after sync)
         const { data: predictions } = await supabase
           .from('predictions')
           .select('predicted_price, guess_number')
@@ -130,22 +183,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const serverPredictions = predictions?.map(p => Number(p.predicted_price)) || []
         const bonusUnlocked = !!bonus
 
-        // If server has data, use it (it's the source of truth)
-        if (serverPredictions.length > 0 || bonusUnlocked) {
+        // Merge: use server predictions if they exist, otherwise keep local
+        const mergedPredictions = serverPredictions.length > 0
+          ? serverPredictions
+          : dayData.predictions
+
+        if (mergedPredictions.length > 0 || bonusUnlocked) {
           const actualPrice = dailyResult?.actual_price ? Number(dailyResult.actual_price) : null
 
           let result: AccuracyResult | null = null
-          if (actualPrice && serverPredictions.length > 0) {
-            // Compute result from best prediction
-            const bestPrediction = serverPredictions.reduce((best, p) =>
+          if (actualPrice && mergedPredictions.length > 0) {
+            const bestPrediction = mergedPredictions.reduce((best, p) =>
               Math.abs(p - actualPrice) < Math.abs(best - actualPrice) ? p : best
-            , serverPredictions[0])
+            , mergedPredictions[0])
             result = calculateAccuracy(bestPrediction, actualPrice)
           }
 
           setDayData({
             date: today,
-            predictions: serverPredictions,
+            predictions: mergedPredictions,
             bonusUnlocked,
             result,
             actualPrice,
@@ -209,11 +265,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
               totalAccuracy += acc
               bestAccuracy = Math.max(bestAccuracy, acc)
             } else {
-              // Pending game — compute target time from date
-              // The game_date in predictions is the date predictions were made
-              // The target time is for the NEXT day (tomorrow relative to game_date)
               const targetInfo = result?.targetTime ?? null
-
               historyEntries.push({ date, predictions: preds, actual: null, accuracy: null, targetTime: targetInfo })
             }
           }
@@ -240,9 +292,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
 
     syncFromServer()
-  }, [user, today, synced, setDayData, setHistory, setStats])
+  }, [user, today, synced, dayData.predictions, dayData.bonusUnlocked, dayData.date, setDayData, setHistory, setStats])
 
-  const maxGuesses = dayData.bonusUnlocked ? 2 : 1
+  // Guess tiers:
+  // - Guess 1: always free (anonymous, localStorage only)
+  // - Guess 2: requires email signup (authenticated)
+  // - Guess 3: requires share (bonusUnlocked)
+  const maxGuesses = useMemo(() => {
+    if (dayData.bonusUnlocked && user) return 3
+    if (user) return 2
+    return 1
+  }, [user, dayData.bonusUnlocked])
+
+  const canGuess = dayData.predictions.length < maxGuesses
+  const needsEmail = !user && dayData.predictions.length >= 1
+  const needsShare = !!user && !dayData.bonusUnlocked && dayData.predictions.length >= 2
 
   const phase: GamePhase = useMemo(() => {
     if (dayData.result) return 'revealed'
@@ -260,7 +324,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       predictions: [...prev.predictions, price],
     }))
 
-    // Persist to Supabase
+    // Persist to Supabase (only if authenticated)
     if (user) {
       supabase.from('predictions').insert({
         user_id: user.id,
@@ -271,6 +335,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (error) console.error('Failed to save prediction:', error.message)
       })
     }
+    // If not authenticated, prediction lives in localStorage only
+    // It will be synced when they sign up (see syncToServer above)
   }, [today, user, dayData.predictions.length, setDayData])
 
   const unlockBonus = useCallback((platform: string) => {
@@ -347,7 +413,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
         doReveal(Number(data.actual_price))
       } else {
         // Server hasn't recorded yet — fall back to client BTC price
-        // (Edge Function will record it shortly, but don't leave user waiting)
         if (btcPrice > 0) {
           doReveal(btcPrice)
         }
@@ -367,6 +432,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       dayData,
       stats,
       history,
+      maxGuesses,
+      canGuess,
+      needsEmail,
+      needsShare,
       btcPrice,
       btcChange24h,
       btcLoading,

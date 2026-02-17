@@ -194,7 +194,7 @@ export default function PredictionInput() {
         color: 'var(--text-muted)',
         marginTop: '10px',
       }}>
-        Within $500 of the real price? You win a share of the $5 daily pot
+        Predict the exact price to win a share of the $5 daily pot
       </div>
 
       {/* Lock countdown */}

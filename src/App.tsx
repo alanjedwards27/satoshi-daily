@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { GameProvider } from './context/GameContext'
-import SignupPage from './pages/SignupPage'
 import GamePage from './pages/GamePage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
@@ -23,7 +22,7 @@ function useHash() {
 }
 
 function Router() {
-  const { user, status } = useAuth()
+  const { status } = useAuth()
   const hash = useHash()
 
   // Legal pages — accessible to everyone regardless of auth state
@@ -48,10 +47,7 @@ function Router() {
     )
   }
 
-  // Not authenticated — show signup
-  if (!user) return <SignupPage />
-
-  // Authenticated — show game
+  // Always show the game — auth gates are now inline (EmailGate after 1st guess)
   return (
     <GameProvider>
       <GamePage />
