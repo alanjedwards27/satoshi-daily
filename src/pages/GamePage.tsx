@@ -13,7 +13,7 @@ import ShareCard from '../components/game/ShareCard'
 import ResultCard from '../components/game/ResultCard'
 import Leaderboard from '../components/game/Leaderboard'
 import History from '../components/game/History'
-import AdSlot from '../components/shared/AdSlot'
+import SponsorCard from '../components/shared/SponsorCard'
 import { useGame } from '../context/GameContext'
 import { usePageView } from '../hooks/usePageView'
 
@@ -113,23 +113,15 @@ export default function GamePage() {
             style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
           >
             <ResultCard />
-            {/* Ad between result and leaderboard — high-engagement moment */}
-            <AdSlot slot="result-top" format="rectangle" label="Sponsored" />
             <Leaderboard />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Ad between game area and secondary content */}
-      <AdSlot slot="mid-page" format="banner" label="Sponsored" />
+      <SponsorCard />
 
       <PrizeTiers />
       <History />
-
-      {/* Bottom ad — always visible regardless of game phase */}
-      <AdSlot slot="bottom" format="rectangle" label="Sponsored" />
-
-      <div style={{ height: '32px' }} />
     </AppShell>
   )
 }

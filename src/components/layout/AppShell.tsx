@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import SponsorCard from '../shared/SponsorCard'
 import styles from './AppShell.module.css'
 
 interface AppShellProps {
@@ -17,9 +16,6 @@ export default function AppShell({ children }: AppShellProps) {
       </div>
       <div className={styles.content}>
         {children}
-      </div>
-      <div className={styles.sponsor}>
-        <SponsorCard />
       </div>
       <footer className={styles.footer}>
         <a

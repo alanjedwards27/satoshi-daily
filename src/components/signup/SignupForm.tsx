@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { getTargetTime } from '../../utils/targetTime'
 import { useCountdown } from '../../hooks/useCountdown'
 import Button from '../shared/Button'
-import AdSlot from '../shared/AdSlot'
+import SponsorCard from '../shared/SponsorCard'
 import GamePreview from './GamePreview'
 import RecentPredictions from './RecentPredictions'
 import PreviousWinners from './PreviousWinners'
@@ -276,8 +276,7 @@ export default function SignupForm() {
 
       <RecentPredictions />
 
-      {/* Ad between game preview and winners — below the fold, non-intrusive */}
-      <AdSlot slot="signup-mid" format="banner" label="Sponsored" />
+      <SponsorCard />
 
       <PreviousWinners />
     </form>

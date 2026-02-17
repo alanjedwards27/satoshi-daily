@@ -44,10 +44,6 @@
   gap: var(--space-lg);
 }
 
-.sponsor {
-  padding-top: var(--space-xl);
-}
-
 .footer {
   display: flex;
   justify-content: center;
