@@ -25,9 +25,10 @@ interface Stats {
 
 interface HistoryEntry {
   date: string
-  prediction: number
-  actual: number
-  accuracy: number
+  predictions: number[]
+  actual: number | null       // null = result pending
+  accuracy: number | null     // null = result pending
+  targetTime: string | null   // e.g. "14:30 UTC" — shown when pending
 }
 
 interface GameContextValue {
@@ -166,17 +167,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
           .order('game_date', { ascending: false })
           .limit(20) // fetch extra, we'll dedupe by date
 
+        // Fetch all daily_results (including pending ones without actual_price)
         const { data: results } = await supabase
           .from('daily_results')
-          .select('game_date, actual_price')
-          .not('actual_price', 'is', null)
+          .select('game_date, actual_price, target_hour, target_minute')
           .order('game_date', { ascending: false })
           .limit(10)
 
         if (historyData && results) {
-          const resultsMap = new Map(results.map(r => [r.game_date, Number(r.actual_price)]))
+          const resultsMap = new Map(results.map(r => [r.game_date, {
+            actual: r.actual_price ? Number(r.actual_price) : null,
+            targetTime: `${String(r.target_hour).padStart(2, '0')}:${String(r.target_minute).padStart(2, '0')} UTC`,
+          }]))
 
-          // Group predictions by date, take best per day
+          // Group predictions by date
           const byDate = new Map<string, number[]>()
           for (const p of historyData) {
             const existing = byDate.get(p.game_date) || []
@@ -189,26 +193,39 @@ export function GameProvider({ children }: { children: ReactNode }) {
           let bestAccuracy = 0
 
           for (const [date, preds] of byDate) {
-            const actual = resultsMap.get(date)
-            if (!actual || date === today) continue // Skip today & unresolved
+            if (date === today) continue // Skip today — shown in the main game UI
 
-            const bestPred = preds.reduce((best, p) =>
-              Math.abs(p - actual) < Math.abs(best - actual) ? p : best
-            , preds[0])
-            const acc = Math.max(0, 1 - Math.abs(bestPred - actual) / actual)
+            const result = resultsMap.get(date)
+            const actual = result?.actual ?? null
 
-            historyEntries.push({ date, prediction: bestPred, actual, accuracy: acc })
-            totalAccuracy += acc
-            bestAccuracy = Math.max(bestAccuracy, acc)
+            if (actual !== null) {
+              // Resolved game — compute accuracy
+              const bestPred = preds.reduce((best, p) =>
+                Math.abs(p - actual) < Math.abs(best - actual) ? p : best
+              , preds[0])
+              const acc = Math.max(0, 1 - Math.abs(bestPred - actual) / actual)
+
+              historyEntries.push({ date, predictions: preds, actual, accuracy: acc, targetTime: result?.targetTime ?? null })
+              totalAccuracy += acc
+              bestAccuracy = Math.max(bestAccuracy, acc)
+            } else {
+              // Pending game — compute target time from date
+              // The game_date in predictions is the date predictions were made
+              // The target time is for the NEXT day (tomorrow relative to game_date)
+              const targetInfo = result?.targetTime ?? null
+
+              historyEntries.push({ date, predictions: preds, actual: null, accuracy: null, targetTime: targetInfo })
+            }
           }
 
           historyEntries.sort((a, b) => b.date.localeCompare(a.date))
-          setHistory(historyEntries.slice(0, 5))
+          setHistory(historyEntries.slice(0, 10))
 
-          if (historyEntries.length > 0) {
+          const resolvedEntries = historyEntries.filter(e => e.accuracy !== null)
+          if (resolvedEntries.length > 0) {
             setStats({
               streak: profile?.current_streak || 0,
-              played: historyEntries.length,
+              played: resolvedEntries.length,
               bestAccuracy,
               totalAccuracy,
             })
@@ -301,8 +318,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       // Update history
       setHistory(h => [
-        { date: today, prediction: bestPrediction, actual: actualPrice, accuracy: result.accuracy },
-        ...h.slice(0, 4),
+        { date: today, predictions: prev.predictions, actual: actualPrice, accuracy: result.accuracy, targetTime: null },
+        ...h.filter(e => e.date !== today).slice(0, 9),
       ])
 
       return { ...prev, result, actualPrice }
