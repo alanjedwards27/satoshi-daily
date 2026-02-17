@@ -5,7 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const WIN_THRESHOLD = 500
+const WIN_THRESHOLD = 0 // Exact match only — predicted price must equal actual (rounded to nearest $)
 const DAILY_PRIZE_POOL = 5.00 // $5
 const ADMIN_EMAIL = 'alan@satoshidaily.app' // Change to your email
 
@@ -274,7 +274,7 @@ Deno.serve(async (req) => {
         actual_price: btcPrice,
         difference: w.difference,
         accuracy: w.accuracy,
-        prize_tier: w.difference <= 1 ? 'exact' : w.difference <= 100 ? 'within_100' : 'within_500',
+        prize_tier: 'exact',
         prize_share: prizeShare,
       }))
 
@@ -322,7 +322,7 @@ Deno.serve(async (req) => {
       const emailMap = new Map(winnerProfiles?.map(p => [p.id, p.email]) ?? [])
 
       for (const w of winners) {
-        const tier = w.difference <= 1 ? 'exact' : w.difference <= 100 ? 'within_100' : 'within_500'
+        const tier = 'exact'
         winnerDetails.push({
           email: emailMap.get(w.user_id) ?? 'unknown',
           predicted: w.predicted_price,

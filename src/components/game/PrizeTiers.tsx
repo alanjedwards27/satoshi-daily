@@ -34,30 +34,24 @@ export default function PrizeTiers() {
         <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px', fontSize: '13px' }}>
           How to win
         </div>
-        Predict within <strong style={{ color: 'var(--text-primary)' }}>$500</strong> of the actual BTC price at the target time and you're a winner. The closer you are, the better your ranking — but all qualifying predictions share the prize pool equally.
+        Predict the <strong style={{ color: 'var(--accent)' }}>exact BTC price</strong> (to the nearest dollar) at the target time. Get it right and you split the $5 daily prize pool. No close enough — you either nail it or you don't.
       </div>
 
-      {/* Win tiers - now just showing what accuracy means */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
-        {[
-          { emoji: '🏆', label: 'Exact (within $1)', desc: 'Legendary accuracy' },
-          { emoji: '🎯', label: 'Within $100', desc: 'Incredible call' },
-          { emoji: '💰', label: 'Within $500', desc: 'You\'re a winner' },
-        ].map((tier) => (
-          <div key={tier.label} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 10px',
-            background: 'var(--bg-secondary)',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: '12px',
-          }}>
-            <span>{tier.emoji}</span>
-            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{tier.label}</span>
-            <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>{tier.desc}</span>
-          </div>
-        ))}
+      {/* The challenge */}
+      <div style={{
+        padding: '12px',
+        background: 'var(--bg-secondary)',
+        borderRadius: 'var(--radius-sm)',
+        fontSize: '12px',
+        color: 'var(--text-secondary)',
+        lineHeight: '1.5',
+        marginBottom: '12px',
+        textAlign: 'center',
+      }}>
+        <span style={{ fontSize: '20px', display: 'block', marginBottom: '6px' }}>🎯</span>
+        <strong style={{ color: 'var(--text-primary)' }}>Can you predict the exact price?</strong>
+        <br />
+        Most days, nobody wins. When someone does, it's legendary.
       </div>
 
       {/* Lightning footer */}
