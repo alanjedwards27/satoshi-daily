@@ -10,6 +10,11 @@ export default function SponsorCard() {
         rel="noopener noreferrer"
         className={styles.link}
       >
+        <img
+          src="/sponsors/postonce.png"
+          alt="PostOnce"
+          className={styles.logo}
+        />
         <div className={styles.body}>
           <div className={styles.name}>PostOnce</div>
           <div className={styles.description}>
