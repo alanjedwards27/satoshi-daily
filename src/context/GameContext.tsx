@@ -92,6 +92,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [stats, setStats] = useLocalStorage<Stats>('sd_stats', EMPTY_STATS)
   const [history, setHistory] = useLocalStorage<HistoryEntry[]>('sd_history', [])
   const [synced, setSynced] = useState(false)
+  const [syncedDate, setSyncedDate] = useState('')
 
   const today = getTodayStr()
 
@@ -99,14 +100,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (dayData.date && dayData.date !== today) {
       setDayData({ ...EMPTY_DAY, date: today })
+      setSynced(false) // Re-sync on new day
+      setSyncedDate('')
     } else if (!dayData.date) {
       setDayData({ ...EMPTY_DAY, date: today })
     }
   }, [today, dayData.date, setDayData])
 
-  // Sync anonymous predictions to Supabase when user signs up
+  // Sync predictions to/from Supabase
+  // Runs when: user signs in, or new day starts
   useEffect(() => {
-    if (!user || synced) return
+    if (!user || (synced && syncedDate === today)) return
+    // Don't sync until day rollover has completed
+    if (dayData.date !== today) return
 
     async function syncToServer() {
       // If there are local predictions that haven't been saved to Supabase yet
@@ -289,14 +295,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
 
         setSynced(true)
+        setSyncedDate(today)
       } catch (err) {
         console.error('Failed to sync from Supabase:', err)
         setSynced(true) // Use cached data
+        setSyncedDate(today)
       }
     }
 
     syncFromServer()
-  }, [user, today, synced, dayData.predictions, dayData.bonusUnlocked, dayData.date, setDayData, setHistory, setStats])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, today, synced, syncedDate, dayData.date])
 
   // Guess tiers:
   // - Guess 1: always free (anonymous, localStorage only)
