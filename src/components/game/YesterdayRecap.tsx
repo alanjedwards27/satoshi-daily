@@ -189,7 +189,6 @@ export default function YesterdayRecap() {
   if (loading || !recap) return null
 
   const tierInfo = TIER_INFO[recap.tier]
-  const pct = (recap.accuracy * 100).toFixed(1)
 
   const shareData: ShareData = {
     date: formatRecapDate(recap.gameDate),
