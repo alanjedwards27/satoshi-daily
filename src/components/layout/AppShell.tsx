@@ -12,6 +12,7 @@ export default function AppShell({ children }: AppShellProps) {
     <div className={styles.shell}>
       <div className={styles.header}>
         <div className={styles.headerTop}>
+          <img src="/logo.png" alt="" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
           <span className={styles.logoText}>Satoshi Daily</span>
         </div>
         <span className={styles.tagline}>The Daily Bitcoin Price Game</span>
