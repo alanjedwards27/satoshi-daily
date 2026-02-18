@@ -13,6 +13,7 @@ import ShareCard from '../components/game/ShareCard'
 import ResultCard from '../components/game/ResultCard'
 import Leaderboard from '../components/game/Leaderboard'
 import History from '../components/game/History'
+import YesterdayRecap from '../components/game/YesterdayRecap'
 import PastResults from '../components/game/PastResults'
 import RecentPredictions from '../components/signup/RecentPredictions'
 import PreviousWinners from '../components/signup/PreviousWinners'
@@ -40,6 +41,8 @@ export default function GamePage() {
       <UserBar />
       {user && <StatsBar />}
       <TargetCard />
+
+      <YesterdayRecap />
 
       <AnimatePresence mode="wait">
         {/* Step 1: Confirm target — only show when predicting and not yet confirmed */}
