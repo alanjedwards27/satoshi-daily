@@ -95,15 +95,15 @@ export default function GamePage() {
         ))}
       </div>
 
-      {/* Tab content */}
-      <AnimatePresence mode="wait">
+      {/* Tab content — no exit animation, just instant swap */}
+      <AnimatePresence>
         {activeTab === 'my-results' && user && (
           <motion.div
             key="tab-my-results"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
           >
             <YesterdayRecap />
           </motion.div>
@@ -112,10 +112,10 @@ export default function GamePage() {
         {activeTab === 'results' && (
           <motion.div
             key="tab-results"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
           >
             <PastResults />
           </motion.div>
@@ -124,10 +124,10 @@ export default function GamePage() {
         {activeTab === 'players' && (
           <motion.div
             key="tab-players"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
             style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
           >
             <RecentPredictions />
