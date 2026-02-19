@@ -153,7 +153,7 @@ export default function Leaderboard() {
               }}>
                 {(entry.accuracy * 100).toFixed(1)}%
               </span>
-              {entry.rank === 1 && (
+              {entry.accuracy === 1 && (
                 <span style={{
                   fontSize: '10px',
                   padding: '2px 6px',
