@@ -20,21 +20,22 @@ export default function TargetCard() {
       transition={{ delay: 0.2 }}
       style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
     >
-      {/* Target time — big hero block */}
+      {/* Target time — dark hero block with orange accents */}
       <div style={{
-        background: 'var(--accent)',
+        background: '#0d0d0d',
         borderRadius: 'var(--radius-lg)',
         padding: '24px 20px',
         textAlign: 'center',
         color: '#fff',
         position: 'relative',
         overflow: 'hidden',
+        border: '1px solid rgba(247, 147, 26, 0.15)',
       }}>
-        {/* Subtle pattern overlay */}
+        {/* Subtle gradient overlay */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%)',
+          background: 'radial-gradient(ellipse at top, rgba(247, 147, 26, 0.06) 0%, transparent 60%)',
           pointerEvents: 'none',
         }} />
 
@@ -43,7 +44,7 @@ export default function TargetCard() {
           fontWeight: 600,
           textTransform: 'uppercase',
           letterSpacing: '2px',
-          opacity: 0.85,
+          color: 'rgba(255, 255, 255, 0.5)',
           marginBottom: '8px',
         }}>
           Tomorrow's Target Time
@@ -56,6 +57,7 @@ export default function TargetCard() {
           letterSpacing: '2px',
           lineHeight: 1,
           marginBottom: '8px',
+          color: 'var(--accent)',
         }}>
           {targetTime.formatted}
         </div>
@@ -63,7 +65,7 @@ export default function TargetCard() {
         <div style={{
           fontSize: '14px',
           fontWeight: 500,
-          opacity: 0.85,
+          color: 'rgba(255, 255, 255, 0.6)',
         }}>
           {formatDateShort(targetTime.targetDate)}
         </div>
@@ -71,9 +73,9 @@ export default function TargetCard() {
         <div style={{
           marginTop: '14px',
           paddingTop: '12px',
-          borderTop: '1px solid rgba(255,255,255,0.2)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           fontSize: '12px',
-          opacity: 0.75,
+          color: 'rgba(255, 255, 255, 0.4)',
         }}>
           What will BTC be worth at this exact moment?
         </div>
