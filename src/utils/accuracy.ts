@@ -19,7 +19,9 @@ export const DAILY_PRIZE_POOL = '$5'
 
 export function calculateAccuracy(prediction: number, actual: number): AccuracyResult {
   const difference = Math.abs(prediction - actual)
-  const accuracy = Math.max(0, 1 - (difference / actual))
+  // Cap at 0.999 unless truly exact — prevents $5 off showing as "100%"
+  const raw = Math.max(0, 1 - (difference / actual))
+  const accuracy = difference === 0 ? 1 : Math.min(raw, 0.999)
 
   const tier = getAccuracyTier(accuracy)
   const prize = getPrizeTier(difference)
@@ -28,10 +30,10 @@ export function calculateAccuracy(prediction: number, actual: number): AccuracyR
 }
 
 function getAccuracyTier(accuracy: number): AccuracyTier {
-  if (accuracy >= 0.99) return 'legendary'
-  if (accuracy >= 0.97) return 'bullseye'
-  if (accuracy >= 0.95) return 'onfire'
-  if (accuracy >= 0.90) return 'solid'
+  if (accuracy >= 0.999) return 'legendary'   // exact or ~$96 off
+  if (accuracy >= 0.995) return 'bullseye'    // within ~$480
+  if (accuracy >= 0.99) return 'onfire'       // within ~$960
+  if (accuracy >= 0.95) return 'solid'        // within ~$4,800
   return 'keepgoing'
 }
 
