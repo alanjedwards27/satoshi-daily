@@ -4,6 +4,7 @@ import { GameProvider } from './context/GameContext'
 import GamePage from './pages/GamePage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
+import AdminPage from './pages/AdminPage'
 import AppShell from './components/layout/AppShell'
 
 function useHash() {
@@ -28,6 +29,7 @@ function Router() {
   // Legal pages — accessible to everyone regardless of auth state
   if (hash === '#/privacy') return <PrivacyPage />
   if (hash === '#/terms') return <TermsPage />
+  if (hash === '#/admin') return <AdminPage />
 
   // Show loading state while checking session
   if (status === 'loading') {
