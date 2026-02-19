@@ -21,13 +21,7 @@ import { useGame } from '../context/GameContext'
 import { useAuth } from '../context/AuthContext'
 import { usePageView } from '../hooks/usePageView'
 
-type Tab = 'yesterday' | 'results' | 'players'
-
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'yesterday', label: 'Yesterday', icon: '📊' },
-  { id: 'results', label: 'Past Results', icon: '📅' },
-  { id: 'players', label: 'Players', icon: '👥' },
-]
+type Tab = 'my-results' | 'results' | 'players'
 
 export default function GamePage() {
   usePageView('game')
@@ -35,15 +29,104 @@ export default function GamePage() {
   const { user } = useAuth()
 
   const [confirmed, setConfirmed] = useState(dayData.predictions.length > 0)
-  const [activeTab, setActiveTab] = useState<Tab>('yesterday')
+  const [activeTab, setActiveTab] = useState<Tab>(user ? 'my-results' : 'results')
 
   const showPredictionFlow = phase === 'predicting' && confirmed
   const isAnonLocked = phase === 'locked' && needsEmail
+
+  // Build tabs based on auth state
+  const tabs: { id: Tab; label: string; icon: string }[] = [
+    ...(user ? [{ id: 'my-results' as Tab, label: 'My Results', icon: '📊' }] : []),
+    { id: 'results', label: 'Past Results', icon: '📅' },
+    { id: 'players', label: 'Players', icon: '👥' },
+  ]
 
   return (
     <AppShell>
       <UserBar />
       {user && <StatsBar />}
+
+      {/* Tab bar — right under header area */}
+      <div style={{
+        display: 'flex',
+        gap: '4px',
+        padding: '4px',
+        background: 'var(--bg-card)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)',
+      }}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              flex: 1,
+              padding: '10px 6px',
+              background: activeTab === tab.id ? 'var(--bg-secondary)' : 'transparent',
+              border: activeTab === tab.id ? '1px solid var(--border)' : '1px solid transparent',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              transition: 'all 0.15s',
+            }}
+          >
+            <span style={{ fontSize: '12px' }}>{tab.icon}</span>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: activeTab === tab.id ? 700 : 500,
+              color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-muted)',
+              fontFamily: 'var(--font-body)',
+            }}>
+              {tab.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <AnimatePresence mode="wait">
+        {activeTab === 'my-results' && user && (
+          <motion.div
+            key="tab-my-results"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <YesterdayRecap />
+          </motion.div>
+        )}
+
+        {activeTab === 'results' && (
+          <motion.div
+            key="tab-results"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <PastResults />
+          </motion.div>
+        )}
+
+        {activeTab === 'players' && (
+          <motion.div
+            key="tab-players"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
+          >
+            <RecentPredictions />
+            <PreviousWinners />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <TargetCard />
 
       <AnimatePresence mode="wait">
@@ -142,87 +225,6 @@ export default function GamePage() {
       </AnimatePresence>
 
       <SponsorCard />
-
-      {/* Tab bar */}
-      <div style={{
-        display: 'flex',
-        gap: '4px',
-        padding: '4px',
-        background: 'var(--bg-card)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border)',
-      }}>
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              flex: 1,
-              padding: '10px 6px',
-              background: activeTab === tab.id ? 'var(--bg-secondary)' : 'transparent',
-              border: activeTab === tab.id ? '1px solid var(--border)' : '1px solid transparent',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '4px',
-              transition: 'all 0.15s',
-            }}
-          >
-            <span style={{ fontSize: '12px' }}>{tab.icon}</span>
-            <span style={{
-              fontSize: '11px',
-              fontWeight: activeTab === tab.id ? 700 : 500,
-              color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-muted)',
-              fontFamily: 'var(--font-body)',
-            }}>
-              {tab.label}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'yesterday' && (
-          <motion.div
-            key="tab-yesterday"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-          >
-            <YesterdayRecap />
-          </motion.div>
-        )}
-
-        {activeTab === 'results' && (
-          <motion.div
-            key="tab-results"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-          >
-            <PastResults />
-          </motion.div>
-        )}
-
-        {activeTab === 'players' && (
-          <motion.div
-            key="tab-players"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
-          >
-            <RecentPredictions />
-            <PreviousWinners />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </AppShell>
   )
 }
