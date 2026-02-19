@@ -177,12 +177,14 @@ Deno.serve(async (req) => {
   const currentMinute = now.getUTCMinutes()
   const todayStr = now.toISOString().split('T')[0]
 
-  // Find any daily_results where target time has passed but actual_price is NULL
+  // Find today's daily_result where target time has passed but actual_price is NULL
+  // IMPORTANT: Only process today's result — past days that missed their window
+  // can't get an accurate price, so we skip them entirely
   const { data: pendingResults } = await supabase
     .from('daily_results')
     .select('game_date, target_hour, target_minute')
     .is('actual_price', null)
-    .lte('game_date', todayStr)
+    .eq('game_date', todayStr)
 
   if (!pendingResults || pendingResults.length === 0) {
     return new Response(JSON.stringify({ message: 'No pending results' }), {
@@ -192,8 +194,6 @@ Deno.serve(async (req) => {
 
   // Filter to only those where target time has actually passed
   const ready = pendingResults.filter(r => {
-    if (r.game_date < todayStr) return true // Past days always ready
-    // Same day: check if current time >= target time
     return currentHour > r.target_hour || (currentHour === r.target_hour && currentMinute >= r.target_minute)
   })
 

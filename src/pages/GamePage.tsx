@@ -29,7 +29,7 @@ export default function GamePage() {
   const { user } = useAuth()
 
   const [confirmed, setConfirmed] = useState(dayData.predictions.length > 0)
-  const [activeTab, setActiveTab] = useState<Tab>(user ? 'my-results' : 'results')
+  const [activeTab, setActiveTab] = useState<Tab | null>(null)
 
   const showPredictionFlow = phase === 'predicting' && confirmed
   const isAnonLocked = phase === 'locked' && needsEmail
@@ -58,7 +58,7 @@ export default function GamePage() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => setActiveTab(prev => prev === tab.id ? null : tab.id)}
             style={{
               flex: 1,
               padding: '10px 6px',
@@ -81,6 +81,15 @@ export default function GamePage() {
               fontFamily: 'var(--font-body)',
             }}>
               {tab.label}
+            </span>
+            <span style={{
+              fontSize: '9px',
+              color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-muted)',
+              transition: 'transform 0.15s',
+              transform: activeTab === tab.id ? 'rotate(180deg)' : 'rotate(0deg)',
+              lineHeight: 1,
+            }}>
+              ▼
             </span>
           </button>
         ))}

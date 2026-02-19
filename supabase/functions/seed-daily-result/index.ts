@@ -31,27 +31,34 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const supabase = createClient(supabaseUrl, serviceKey)
 
-  // Seed tomorrow's result
-  const tomorrow = new Date()
+  // Seed today + tomorrow (safety net: if yesterday's cron missed, today still gets created)
+  const now = new Date()
+  const todayStr = now.toISOString().split('T')[0]
+  const tomorrow = new Date(now)
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
-  const dateStr = tomorrow.toISOString().split('T')[0]
+  const tomorrowStr = tomorrow.toISOString().split('T')[0]
 
-  const { hours, minutes } = getTargetTimeForDate(dateStr)
+  const seeded: string[] = []
 
-  const { error } = await supabase.from('daily_results').upsert({
-    game_date: dateStr,
-    target_hour: hours,
-    target_minute: minutes,
-  }, { onConflict: 'game_date' })
+  for (const dateStr of [todayStr, tomorrowStr]) {
+    const { hours, minutes } = getTargetTimeForDate(dateStr)
 
-  if (error) {
-    console.error('Failed to seed daily result:', error)
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    const { error } = await supabase.from('daily_results').upsert({
+      game_date: dateStr,
+      target_hour: hours,
+      target_minute: minutes,
+    }, { onConflict: 'game_date' })
+
+    if (error) {
+      console.error(`Failed to seed ${dateStr}:`, error)
+    } else {
+      seeded.push(`${dateStr} @ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} UTC`)
+    }
   }
 
-  console.log(`Seeded daily result for ${dateStr}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} UTC`)
+  console.log('Seeded daily results:', seeded)
 
-  return new Response(JSON.stringify({ success: true, date: dateStr, time: `${hours}:${minutes}` }), {
+  return new Response(JSON.stringify({ success: true, seeded }), {
     headers: { 'Content-Type': 'application/json' },
   })
 })
