@@ -12,7 +12,6 @@ import LockedState from '../components/game/LockedState'
 import ShareCard from '../components/game/ShareCard'
 import ResultCard from '../components/game/ResultCard'
 import Leaderboard from '../components/game/Leaderboard'
-import History from '../components/game/History'
 import YesterdayRecap from '../components/game/YesterdayRecap'
 import PastResults from '../components/game/PastResults'
 import RecentPredictions from '../components/signup/RecentPredictions'
@@ -22,18 +21,23 @@ import { useGame } from '../context/GameContext'
 import { useAuth } from '../context/AuthContext'
 import { usePageView } from '../hooks/usePageView'
 
+type Tab = 'yesterday' | 'results' | 'players'
+
+const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: 'yesterday', label: 'Yesterday', icon: '📊' },
+  { id: 'results', label: 'Past Results', icon: '📅' },
+  { id: 'players', label: 'Players', icon: '👥' },
+]
+
 export default function GamePage() {
   usePageView('game')
   const { phase, dayData, canGuess, needsEmail, needsShare } = useGame()
   const { user } = useAuth()
 
-  // Step 1: user must confirm they've seen the target before predicting
-  // Skip confirmation if they've already made a prediction
   const [confirmed, setConfirmed] = useState(dayData.predictions.length > 0)
+  const [activeTab, setActiveTab] = useState<Tab>('yesterday')
 
   const showPredictionFlow = phase === 'predicting' && confirmed
-
-  // Is this an anonymous user who used their free guess and needs to sign up?
   const isAnonLocked = phase === 'locked' && needsEmail
 
   return (
@@ -42,10 +46,7 @@ export default function GamePage() {
       {user && <StatsBar />}
       <TargetCard />
 
-      <YesterdayRecap />
-
       <AnimatePresence mode="wait">
-        {/* Step 1: Confirm target — only show when predicting and not yet confirmed */}
         {phase === 'predicting' && !confirmed && (
           <motion.div
             key="confirm"
@@ -81,7 +82,6 @@ export default function GamePage() {
           </motion.div>
         )}
 
-        {/* Step 2: Prediction flow with inline gates */}
         {showPredictionFlow && (
           <motion.div
             key="predicting"
@@ -91,19 +91,12 @@ export default function GamePage() {
             style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
           >
             <GuessCounter />
-
-            {/* Can make a guess right now */}
             {canGuess && <PredictionInput />}
-
-            {/* Gate: needs email for 2nd guess */}
             {needsEmail && <EmailGate />}
-
-            {/* Gate: needs share for 3rd guess */}
             {needsShare && <BonusCard />}
           </motion.div>
         )}
 
-        {/* Anonymous user made their free guess — show locked prediction + email gate */}
         {isAnonLocked && (
           <motion.div
             key="anon-locked"
@@ -118,7 +111,6 @@ export default function GamePage() {
           </motion.div>
         )}
 
-        {/* Fully locked — authenticated user used all guesses */}
         {phase === 'locked' && !needsEmail && (
           <motion.div
             key="locked"
@@ -128,14 +120,8 @@ export default function GamePage() {
             style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
           >
             <GuessCounter />
-
-            {/* Still need to share for 3rd guess */}
             {needsShare && <BonusCard />}
-
-            {/* Can still make a guess (just unlocked via email or share) */}
             {canGuess && <PredictionInput />}
-
-            {/* All guesses used — show locked state + share CTA */}
             {!canGuess && <LockedState />}
             {!canGuess && <ShareCard />}
           </motion.div>
@@ -157,10 +143,86 @@ export default function GamePage() {
 
       <SponsorCard />
 
-      <PastResults />
-      <RecentPredictions />
-      {user && <History />}
-      <PreviousWinners />
+      {/* Tab bar */}
+      <div style={{
+        display: 'flex',
+        gap: '4px',
+        padding: '4px',
+        background: 'var(--bg-card)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)',
+      }}>
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              flex: 1,
+              padding: '10px 6px',
+              background: activeTab === tab.id ? 'var(--bg-secondary)' : 'transparent',
+              border: activeTab === tab.id ? '1px solid var(--border)' : '1px solid transparent',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              transition: 'all 0.15s',
+            }}
+          >
+            <span style={{ fontSize: '12px' }}>{tab.icon}</span>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: activeTab === tab.id ? 700 : 500,
+              color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-muted)',
+              fontFamily: 'var(--font-body)',
+            }}>
+              {tab.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <AnimatePresence mode="wait">
+        {activeTab === 'yesterday' && (
+          <motion.div
+            key="tab-yesterday"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <YesterdayRecap />
+          </motion.div>
+        )}
+
+        {activeTab === 'results' && (
+          <motion.div
+            key="tab-results"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <PastResults />
+          </motion.div>
+        )}
+
+        {activeTab === 'players' && (
+          <motion.div
+            key="tab-players"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
+          >
+            <RecentPredictions />
+            <PreviousWinners />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AppShell>
   )
 }
